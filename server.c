@@ -194,7 +194,7 @@ void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void 
 }
 
 void on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
-    suggested_size = 8;
+//    suggested_size = 8;
 //    suggested_size = 16;
 //    suggested_size = 128;
     buf->base = (char *)malloc(suggested_size);
