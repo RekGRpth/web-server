@@ -1,7 +1,7 @@
 #include "ragel_http_parser.h"
 #include <string.h>
 #include <stdbool.h>
-#include <stdlib.h>
+//#include <stdlib.h>
 
 #define CALL(FOR) { if (FOR##_mark) { if (settings->on_##FOR) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; } }
 #define MARK(FOR) { if (!FOR##_mark) { FOR##_mark = p; } }
@@ -42,9 +42,9 @@
                       | "Content-Length"i space* ':' space* length+
                       | header_field space* ':' space* header_value ) crlf;
     status          = ( text -- "\r" -- "\n" )*;
-    code            = [1-5][0-9]{2} >{ mark = p; } %{ parser->status_code = atoi(mark); };
+    code            = digit >{ mark = p; } %{ if (parser->status_code > 0) { parser->status_code *= 10; } parser->status_code += (*mark - '0'); };
     request         = method " " url " " version;
-    status_code     = ( code " " status ) >{ MARK(status); } ${ STAT(status); } %{ CALL(status); };
+    status_code     = ( code{3} " " status ) >{ MARK(status); } ${ STAT(status); } %{ CALL(status); };
     response        = version " " status_code;
     start           = request | response;
     headers         = header* >{ NTFY(headers_begin); } %{ NTFY(headers_complete); parser->headers_complete = true; };
