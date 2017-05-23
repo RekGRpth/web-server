@@ -3,12 +3,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define CALL(FOR) { if (FOR##_mark) { if (settings->on_##FOR) { /*DEBUG("CALL(%s)cs=%i\n", #FOR, cs);*/ settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; } }
-#define MARK(FOR) { if (!FOR##_mark) { /*DEBUG("MARK(%s)cs=%i\n", #FOR, cs);*/ FOR##_mark = p; } }
-#define FILD(FOR) { if (!FOR##_field_mark) { /*DEBUG("MARK(%s)cs=%i\n", #FOR, cs);*/ FOR##_field_mark = p; FOR##_value_mark = NULL; } }
-#define VALU(FOR) { if (!FOR##_value_mark) { /*DEBUG("MARK(%s)cs=%i\n", #FOR, cs);*/ FOR##_value_mark = p; FOR##_field_mark = NULL; } }
-#define NTFY(FOR) { if (settings->on_##FOR) { /*DEBUG("NTFY(%s)cs=%i\n", #FOR, cs);*/ settings->on_##FOR(parser); } }
-#define STAT(FOR) { if (FOR##_mark) { /*DEBUG("STAT(%s)cs=%i\n", #FOR, cs);*/ parser->FOR##_state = cs; } }
+#define CALL(FOR) { if (FOR##_mark) { if (settings->on_##FOR) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; } }
+#define MARK(FOR) { if (!FOR##_mark) { FOR##_mark = p; } }
+#define FILD(FOR) { if (!FOR##_field_mark) { FOR##_field_mark = p; FOR##_value_mark = NULL; } }
+#define VALU(FOR) { if (!FOR##_value_mark) { FOR##_value_mark = p; FOR##_field_mark = NULL; } }
+#define NTFY(FOR) { if (settings->on_##FOR) { settings->on_##FOR(parser); } }
+#define STAT(FOR) { if (FOR##_mark) { parser->FOR##_state = cs; } }
 
 %%{
     machine http_parser;
@@ -50,9 +50,7 @@
     headers         = header* >{ NTFY(headers_begin); } %{ NTFY(headers_complete); parser->headers_complete = true; };
     body            = any* >{ MARK(body); } ${ STAT(body); parser->ragel_content_length++; } %{ CALL(body); };
     message         = start crlf headers crlf body;
-    main           := message >{ NTFY(message_begin); } %{
-        DEBUG("parser->ragel_content_length=%li,parser->content_length=%li,cs=%i, parser->state=%i\n", parser->ragel_content_length, parser->content_length, cs, parser->state);
-    if (parser->ragel_content_length < parser->content_length) { fbreak; } else { NTFY(message_complete); } };
+    main           := message >{ NTFY(message_begin); } %{ if (parser->ragel_content_length < parser->content_length) { fbreak; } else { NTFY(message_complete); } };
 }%%
 
 %% write data;
