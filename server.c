@@ -41,11 +41,11 @@ void close_handle(uv_handle_t * handle) {
 void on_write(uv_write_t *req, int status) { // void (*uv_write_cb)(uv_write_t* req, int status)
     write_req_t *wr = (write_req_t *)req->data;
     context_t *context = (context_t *)req->handle->data;
-    DEBUG("http_should_keep_alive=%i\n", http_should_keep_alive(&context->parser));
+//    DEBUG("http_should_keep_alive=%i\n", http_should_keep_alive(&context->parser));
     if (!http_should_keep_alive(&context->parser)) { // int http_should_keep_alive(const http_parser *parser);
         close_handle((uv_handle_t *)req->handle);
     } else {
-        DEBUG("reinit\n");
+//        DEBUG("reinit\n");
         http_parser_init(&context->parser, HTTP_REQUEST); // void http_parser_init(http_parser *parser, enum http_parser_type type);
     }
     free(wr);
@@ -70,37 +70,37 @@ int write_response(context_t *context) {
 }
 
 int on_message_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
+//    DEBUG("\n");
     return 0;
 }
 int on_url(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("url(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("url(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_status(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("status(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("status(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_header_field(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("header_field(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("header_field(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_header_value(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("header_value(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("header_value(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_headers_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
+//    DEBUG("\n");
     return 0;
 }
 int on_body(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("body(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("body(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_message_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
-    DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
-    DEBUG("content_length=%li\n", parser->content_length);
+//    DEBUG("\n");
+//    DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
+//    DEBUG("content_length=%li\n", parser->content_length);
     context_t *context = (context_t *)parser->data;
     if (write_response(context)) {
         ERROR("write_response\n");
@@ -109,44 +109,44 @@ int on_message_complete(http_parser *parser) { // typedef int (*http_cb) (http_p
     return errno;
 }
 int on_chunk_header(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
+//    DEBUG("\n");
     return 0;
 }
 int on_chunk_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
+//    DEBUG("\n");
     return 0;
 }
 #if RAGEL
 int on_version(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("version(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("version(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_method(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("method(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("method(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_query(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("query(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("query(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_path(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("path(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("path(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_arg(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("arg(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("arg(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_var_field(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("var_field(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("var_field(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_var_value(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("var_value(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("var_value(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 int on_headers_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
+//    DEBUG("\n");
     return 0;
 }
 #endif
@@ -179,7 +179,7 @@ void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void 
 //    DEBUG("value=%.*s\n", (int)length, at);
     context_t *context = (context_t *)stream->data;
     if (nread == UV_EOF) {
-        ERROR("nread=UV_EOF\n");
+//        ERROR("nread=UV_EOF\n");
         if (!http_should_keep_alive(&context->parser)) { // int http_should_keep_alive(const http_parser *parser);
             close_handle((uv_handle_t *)&context->client);
         }
