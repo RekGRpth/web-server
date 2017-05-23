@@ -7,19 +7,19 @@ endif
 
 ifeq (true,$(RAGEL))
 CPPFLAGS+=-DRAGEL=true
-server: server.o ragel-http-parser/ragel_http_parser.o xbuffer.o
+server: server.o ragel-http-parser/ragel_http_parser.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $+ -luv -o $@
 else
 CPPFLAGS+=-DRAGEL=false
 
 ifeq (true,$(DEBUG))
-server: server.o http-parser/http_parser_g.o xbuffer.o
+server: server.o http-parser/http_parser_g.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $+ -luv -o $@
 
 http-parser/http_parser_g.o: Makefile
 	$(MAKE) -C http-parser http_parser_g.o
 else
-server: server.o http-parser/http_parser.o xbuffer.o
+server: server.o http-parser/http_parser.o
 	$(CC) $(CPPFLAGS) $(CFLAGS) $+ -luv -o $@
 
 http-parser/http_parser.o: Makefile
