@@ -18,14 +18,13 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-#ifndef _RAGEL_HTTP_PARSER_H
-#define _RAGEL_HTTP_PARSER_H
+#ifndef _HTTP_PARSER_H
+#define _HTTP_PARSER_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdbool.h>
 #include "../macros.h"
 
 #include <sys/types.h>
@@ -304,7 +303,7 @@ struct http_parser {
     int arg_state;
     int var_field_state;
     int var_value_state;
-    bool headers_complete : 1;
+    unsigned short headers_complete : 1;
     uint64_t ragel_content_length;
 };
 
@@ -364,4 +363,4 @@ int http_body_is_final(const http_parser *parser);
 }
 #endif
 
-#endif // _RAGEL_HTTP_PARSER_H
+#endif // _HTTP_PARSER_H

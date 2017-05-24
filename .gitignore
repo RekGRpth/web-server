@@ -1,3 +1,3 @@
 *.o
 server
-ragel-http-parser/ragel_http_parser.c
+ragel-http-parser/http_parser.c

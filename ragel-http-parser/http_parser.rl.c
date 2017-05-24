@@ -1,6 +1,5 @@
-#include "ragel_http_parser.h"
+#include "http_parser.h"
 #include <string.h>
-#include <stdbool.h>
 
 #define CALL(FOR) { if (FOR##_mark) { if (settings->on_##FOR) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; } }
 #define MARK(FOR) { if (!FOR##_mark) { FOR##_mark = p; } }
@@ -46,7 +45,7 @@
     status_code     = ( code{3} " " status ) >{ MARK(status); } ${ STAT(status); } %{ CALL(status); };
     response        = version " " status_code;
     start           = request | response;
-    headers         = header* >{ NTFY(headers_begin); } %{ NTFY(headers_complete); parser->headers_complete = true; };
+    headers         = header* >{ NTFY(headers_begin); } %{ NTFY(headers_complete); parser->headers_complete = 1; };
     body            = any* >{ MARK(body); } ${ STAT(body); parser->ragel_content_length++; } %{ CALL(body); };
     message         = start crlf headers crlf body;
     main           := message >{ NTFY(message_begin); } %{ if (parser->ragel_content_length < parser->content_length) { fbreak; } else { NTFY(message_complete); } };

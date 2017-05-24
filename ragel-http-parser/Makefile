@@ -7,11 +7,11 @@ CFLAGS+=-O3 -s
 RFLAGS+=-C -G2
 endif
 
-ragel_http_parser.o: ragel_http_parser.c ragel_http_parser.h Makefile
+http_parser.o: http_parser.c http_parser.h Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
-ragel_http_parser.c: ragel_http_parser.rl.c Makefile
+http_parser.c: http_parser.rl.c Makefile
 	ragel ${RFLAGS} $< -o $@
 
 clean:
-	rm -f *.o ragel_http_parser.c
+	rm -f *.o http_parser.c
