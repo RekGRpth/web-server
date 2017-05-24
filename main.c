@@ -2,7 +2,6 @@
 #include <uv.h>
 #include "macros.h"
 #include "main.h"
-#include "request.h"
 
 int main(int argc, char **argv) {
     if (uv_replace_allocator(malloc, realloc, calloc, free)) { // int uv_replace_allocator(uv_malloc_func malloc_func, uv_realloc_func realloc_func, uv_calloc_func calloc_func, uv_free_func free_func)
@@ -31,15 +30,15 @@ int main(int argc, char **argv) {
         return errno;
     }
 #   define THREADS 8
-    uv_thread_t tid[THREADS];
+    uv_thread_t request_tid[THREADS];
     for (int i = 0; i < THREADS; i++) {
-        if (uv_thread_create(&tid[i], on_start, (void *)&handle.io_watcher.fd)) { // int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg)
+        if (uv_thread_create(&request_tid[i], request_on_start, (void *)&handle.io_watcher.fd)) { // int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg)
             ERROR("uv_thread_create\n");
             return errno;
         }
     }
     for (int i = 0; i < THREADS; i++) {
-        if (uv_thread_join(&tid[i])) { // int uv_thread_join(uv_thread_t *tid)
+        if (uv_thread_join(&request_tid[i])) { // int uv_thread_join(uv_thread_t *tid)
             ERROR("uv_thread_join\n");
             return errno;
         }
