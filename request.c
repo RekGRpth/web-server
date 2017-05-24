@@ -15,7 +15,8 @@ void request_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
         ERROR("uv_tcp_init\n");
         return;
     }
-    if (uv_tcp_open(&handle, *((uv_os_sock_t *)arg))) { // int uv_tcp_open(uv_tcp_t* handle, uv_os_sock_t sock)
+    uv_os_sock_t sock = *((uv_os_sock_t *)arg);
+    if (uv_tcp_open(&handle, sock)) { // int uv_tcp_open(uv_tcp_t* handle, uv_os_sock_t sock)
         ERROR("uv_tcp_open\n");
         return;
     }
