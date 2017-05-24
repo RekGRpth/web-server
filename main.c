@@ -3,6 +3,8 @@
 #include "macros.h"
 #include "main.h"
 
+static int request_thread_count;
+
 int main(int argc, char **argv) {
     if (uv_replace_allocator(malloc, realloc, calloc, free)) { // int uv_replace_allocator(uv_malloc_func malloc_func, uv_realloc_func realloc_func, uv_calloc_func calloc_func, uv_free_func free_func)
         ERROR("uv_replace_allocator\n");
@@ -40,10 +42,10 @@ int main(int argc, char **argv) {
 #ifndef REQUEST_THREAD_COUNT
 #   define REQUEST_THREAD_COUNT 0
 #endif
-#if REQUEST_THREAD_COUNT == 0
-    const int request_thread_count = cpu_count;
+#if REQUEST_THREAD_COUNT > 0
+    request_thread_count = REQUEST_THREAD_COUNT;
 #else
-    const int request_thread_count = REQUEST_THREAD_COUNT;
+    request_thread_count = cpu_count;
 #endif
     uv_thread_t request_tid[request_thread_count];
     for (int i = 0; i < request_thread_count; i++) {
