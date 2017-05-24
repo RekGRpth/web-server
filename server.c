@@ -313,4 +313,9 @@ int main(int argc, char **argv) {
             return errno;
         }
     }
+    if (uv_run(&loop, UV_RUN_DEFAULT)) { // int uv_run(uv_loop_t* loop, uv_run_mode mode)
+        ERROR("uv_run\n");
+        return errno;
+    }
+    return errno;
 }
