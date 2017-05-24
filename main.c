@@ -29,12 +29,16 @@ int main(int argc, char **argv) {
         ERROR("uv_tcp_bind\n");
         return errno;
     }
+    uv_os_sock_t sock = handle.io_watcher.fd;
 #ifndef REQUEST_THREAD_COUNT
 #   define REQUEST_THREAD_COUNT 0
 #endif
     int count = REQUEST_THREAD_COUNT;
     switch(count) {
-        case 1: { request_on_start((void *)&handle.io_watcher.fd); return errno; } break;
+        case 1: {
+            request_on_start((void *)&sock);
+            return errno;
+        } break;
         case 0: {
             uv_cpu_info_t *cpu_infos;
             if (uv_cpu_info(&cpu_infos, &count)) { // int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count)
@@ -46,7 +50,7 @@ int main(int argc, char **argv) {
     }
     uv_thread_t request_tid[count];
     for (int i = 0; i < count; i++) {
-        if (uv_thread_create(&request_tid[i], request_on_start, (void *)&handle.io_watcher.fd)) { // int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg)
+        if (uv_thread_create(&request_tid[i], request_on_start, (void *)&sock)) { // int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg)
             ERROR("uv_thread_create\n");
             return errno;
         }
