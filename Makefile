@@ -1,3 +1,6 @@
+ifneq (,$(THREAD))
+CFLAGS+=-DREQUEST_THREAD_COUNT=$(THREAD)
+endif
 CFLAGS+=-Wall -Wextra -Werror -Wno-unused-parameter
 ifeq (true,$(DEBUG))
     CFLAGS+=-O0 -g
@@ -6,23 +9,23 @@ else
 endif
 
 ifeq (true,$(RAGEL))
-    CPPFLAGS+=-DRAGEL_HTTP_PARSER
+    CFLAGS+=-DRAGEL_HTTP_PARSER
     server: main.o request.o parser.o response.o ragel-http-parser/http_parser.o
-		$(CC) $(CPPFLAGS) $(CFLAGS) $+ -luv -o $@
+		$(CC) $(CFLAGS) $+ -luv -o $@
 
     ragel-http-parser/http_parser.o: Makefile
 		$(MAKE) -C ragel-http-parser http_parser.o
 else
-    CPPFLAGS+=-DNODEJS_HTTP_PARSER
+    CFLAGS+=-DNODEJS_HTTP_PARSER
     ifeq (true,$(DEBUG))
         server: main.o request.o parser.o response.o nodejs-http-parser/http_parser_g.o
-			$(CC) $(CPPFLAGS) $(CFLAGS) $+ -luv -o $@
+			$(CC) $(CFLAGS) $+ -luv -o $@
 
         nodejs-http-parser/http_parser_g.o: Makefile
 			$(MAKE) -C nodejs-http-parser http_parser_g.o
     else
         server: main.o request.o parser.o response.o nodejs-http-parser/http_parser.o
-			$(CC) $(CPPFLAGS) $(CFLAGS) $+ -luv -o $@
+			$(CC) $(CFLAGS) $+ -luv -o $@
 
         nodejs-http-parser/http_parser.o: Makefile
 			$(MAKE) -C nodejs-http-parser http_parser.o
@@ -30,7 +33,7 @@ else
 endif
 
 %.o: %.c %.h Makefile
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
 	$(MAKE) -C nodejs-http-parser clean
