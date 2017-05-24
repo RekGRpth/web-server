@@ -30,18 +30,18 @@ int main(int argc, char **argv) {
         return errno;
     }
     uv_os_sock_t sock = handle.io_watcher.fd;
+    int cpu_count;
+    uv_cpu_info_t *cpu_infos;
+    if (uv_cpu_info(&cpu_infos, &cpu_count)) { // int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count)
+        ERROR("uv_cpu_info\n");
+        return errno;
+    }
+    uv_free_cpu_info(cpu_infos, cpu_count); // void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count)
 #ifndef REQUEST_THREAD_COUNT
 #   define REQUEST_THREAD_COUNT 0
 #endif
 #if REQUEST_THREAD_COUNT == 0
-    int count;
-    uv_cpu_info_t *cpu_infos;
-    if (uv_cpu_info(&cpu_infos, &count)) { // int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count)
-        ERROR("uv_cpu_info\n");
-        return errno;
-    }
-    uv_free_cpu_info(cpu_infos, count); // void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count)
-    const int request_thread_count = count;
+    const int request_thread_count = cpu_count;
 #else
     const int request_thread_count = REQUEST_THREAD_COUNT;
 #endif
