@@ -29,15 +29,21 @@ int main(int argc, char **argv) {
         ERROR("uv_tcp_bind\n");
         return errno;
     }
-#   define THREADS 8
-    uv_thread_t request_tid[THREADS];
-    for (int i = 0; i < THREADS; i++) {
+    uv_cpu_info_t *cpu_infos;
+    int count;
+    if (uv_cpu_info(&cpu_infos, &count)) { // int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count)
+        ERROR("uv_cpu_info\n");
+        return errno;
+    }
+    uv_free_cpu_info(cpu_infos, count); // void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count)
+    uv_thread_t request_tid[count];
+    for (int i = 0; i < count; i++) {
         if (uv_thread_create(&request_tid[i], request_on_start, (void *)&handle.io_watcher.fd)) { // int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg)
             ERROR("uv_thread_create\n");
             return errno;
         }
     }
-    for (int i = 0; i < THREADS; i++) {
+    for (int i = 0; i < count; i++) {
         if (uv_thread_join(&request_tid[i])) { // int uv_thread_join(uv_thread_t *tid)
             ERROR("uv_thread_join\n");
             return errno;
