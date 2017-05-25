@@ -39,15 +39,18 @@ int main(int argc, char **argv) {
         ERROR("uv_tcp_init\n");
         return errno;
     }
+    char *web_server_ip = getenv("WEB_SERVER_IP"); // char *getenv(const char *name);
+    if (!web_server_ip) web_server_ip = "0.0.0.0";
+    char *web_server_port = getenv("WEB_SERVER_PORT"); // char *getenv(const char *name);
+    int port = 8080;
+    if (web_server_port) port = atoi(web_server_port);
     struct sockaddr_in addr;
-#   define IP "0.0.0.0"
-#   define PORT 8080
-    if (uv_ip4_addr(IP, PORT, &addr)) { // int uv_ip4_addr(const char* ip, int port, struct sockaddr_in* addr)
-        ERROR("uv_ip4_addr IP=%s, PORT=%i\n", IP, PORT);
+    if (uv_ip4_addr(web_server_ip, port, &addr)) { // int uv_ip4_addr(const char* ip, int port, struct sockaddr_in* addr)
+        ERROR("uv_ip4_addr:%s:%i\n", web_server_ip, port);
         return errno;
     }
     if (uv_tcp_bind(&handle, (const struct sockaddr *)&addr, 0)) { // int uv_tcp_bind(uv_tcp_t* handle, const struct sockaddr* addr, unsigned int flags)
-        ERROR("uv_tcp_bind\n");
+        ERROR("uv_tcp_bind:%s:%i\n", web_server_ip, port);
         return errno;
     }
     uv_os_sock_t sock;
