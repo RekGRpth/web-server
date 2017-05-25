@@ -10,4 +10,4 @@ make clean && \
 RAGEL=${RAGEL} DEBUG=${DEBUG} make && \
 clear && \
 clear && \
-REQUEST_THREAD_COUNT=0 ./server
+WEB_SERVER_THREAD_COUNT=0 ./server

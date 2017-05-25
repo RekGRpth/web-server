@@ -56,8 +56,8 @@ int main(int argc, char **argv) {
         return errno;
     }
     int thread_count = cpu_count;
-    char *request_thread_count = getenv("REQUEST_THREAD_COUNT"); // char *getenv(const char *name);
-    if (request_thread_count) thread_count = atoi(request_thread_count);
+    char *web_server_thread_count = getenv("WEB_SERVER_THREAD_COUNT"); // char *getenv(const char *name);
+    if (web_server_thread_count) thread_count = atoi(web_server_thread_count);
     if (thread_count < 1) thread_count = cpu_count;
     uv_thread_t tid[thread_count];
     for (int i = 0; i < thread_count; i++) {
