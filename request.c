@@ -1,10 +1,20 @@
 #include <stdlib.h>
+#include <sys/sysctl.h>
+#include <linux/sysctl.h>
 #include <uv.h>
 #include "macros.h"
 #include "context.h"
 #include "request.h"
 
 void request_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
+    int name[] = {CTL_NET, NET_CORE, NET_CORE_SOMAXCONN}, nlen = sizeof(name), oldval[nlen];
+    size_t oldlenp = sizeof(oldval);
+    if (sysctl(name, nlen / sizeof(int), (void *)oldval, &oldlenp, NULL, 0)) {// int sysctl (int *name, int nlen, void *oldval, size_t *oldlenp, void *newval, size_t newlen)
+        ERROR("sysctl\n");
+        return;
+    }
+    int backlog = SOMAXCONN;
+    if (oldlenp > 0) backlog = oldval[0];
     uv_loop_t loop;
     if (uv_loop_init(&loop)) { // int uv_loop_init(uv_loop_t* loop)
         ERROR("uv_loop_init\n");
@@ -20,8 +30,7 @@ void request_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
         ERROR("uv_tcp_open\n");
         return;
     }
-#   define BACKLOG 128
-    if (uv_listen((uv_stream_t *)&handle, BACKLOG, request_on_connect)) { // int uv_listen(uv_stream_t* stream, int backlog, uv_connection_cb cb)
+    if (uv_listen((uv_stream_t *)&handle, backlog, request_on_connect)) { // int uv_listen(uv_stream_t* stream, int backlog, uv_connection_cb cb)
         ERROR("uv_listen\n");
         return;
     }
