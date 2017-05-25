@@ -14,4 +14,4 @@ make clean && \
 RAGEL=${RAGEL} DEBUG=${DEBUG} THREAD=${THREAD} make && \
 clear && \
 clear && \
-UV_THREADPOOL_SIZE=8 ./server
+./server

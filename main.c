@@ -8,6 +8,24 @@ int main(int argc, char **argv) {
         ERROR("uv_replace_allocator\n");
         return errno;
     }
+    int cpu_count;
+    uv_cpu_info_t *cpu_infos;
+    if (uv_cpu_info(&cpu_infos, &cpu_count)) { // int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count)
+        ERROR("uv_cpu_info\n");
+        return errno;
+    }
+    uv_free_cpu_info(cpu_infos, cpu_count); // void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count)
+    int length = 2;
+    for (int number = cpu_count; number /= 10; length++);
+    char str[length];
+    if (snprintf(str, length, "%d", cpu_count) != length - 1) { // int snprintf(char *str, size_t size, const char *format, ...)
+        ERROR("snprintf\n");
+        return errno;
+    }
+    if (setenv("UV_THREADPOOL_SIZE", str, 1)) { // int setenv(const char *name, const char *value, int overwrite)
+        ERROR("setenv\n");
+        return errno;
+    }
     uv_loop_t loop;
     if (uv_loop_init(&loop)) { // int uv_loop_init(uv_loop_t* loop)
         ERROR("uv_loop_init\n");
@@ -34,13 +52,6 @@ int main(int argc, char **argv) {
         ERROR("uv_fileno\n");
         return errno;
     }
-    int cpu_count;
-    uv_cpu_info_t *cpu_infos;
-    if (uv_cpu_info(&cpu_infos, &cpu_count)) { // int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count)
-        ERROR("uv_cpu_info\n");
-        return errno;
-    }
-    uv_free_cpu_info(cpu_infos, cpu_count); // void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count)
 #ifndef THREAD_COUNT
 #   define THREAD_COUNT 0
 #endif
