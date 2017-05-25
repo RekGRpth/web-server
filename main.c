@@ -55,14 +55,10 @@ int main(int argc, char **argv) {
         ERROR("uv_fileno\n");
         return errno;
     }
-#ifndef THREAD_COUNT
-#   define THREAD_COUNT 0
-#endif
-#if THREAD_COUNT > 0
-    const int thread_count = THREAD_COUNT;
-#else
-    const int thread_count = cpu_count;
-#endif
+    int thread_count = cpu_count;
+    char *request_thread_count = getenv("REQUEST_THREAD_COUNT"); // char *getenv(const char *name);
+    if (request_thread_count) thread_count = atoi(request_thread_count);
+    if (thread_count < 1) thread_count = cpu_count;
     uv_thread_t tid[thread_count];
     for (int i = 0; i < thread_count; i++) {
         if (uv_thread_create(&tid[i], request_on_start, (void *)&sock)) { // int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg)

@@ -1,9 +1,5 @@
 #!/bin/sh
 
-THREAD=0
-#THREAD=1
-#THREAD=5
-#THREAD=10
 DEBUG=true
 #DEBUG=false
 RAGEL=true
@@ -11,7 +7,7 @@ RAGEL=true
 clear && \
 clear && \
 make clean && \
-RAGEL=${RAGEL} DEBUG=${DEBUG} THREAD=${THREAD} make && \
+RAGEL=${RAGEL} DEBUG=${DEBUG} make && \
 clear && \
 clear && \
-./server
+REQUEST_THREAD_COUNT=0 ./server
