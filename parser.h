@@ -15,7 +15,7 @@
 void request_close(uv_handle_t * handle);
 
 // from response.c
-int response_write(context_t *context);
+int response_write(client_t *client);
 
 // to parser.c
 void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf); // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )

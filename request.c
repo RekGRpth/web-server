@@ -45,25 +45,25 @@ void request_on_connect(uv_stream_t *server, int status) { // void (*uv_connecti
         ERROR("status");
         return;
     }
-    context_t *context = (context_t *)malloc(sizeof(context_t));
-    if (context == NULL) {
+    client_t *client = (client_t *)malloc(sizeof(client_t));
+    if (client == NULL) {
         ERROR("malloc\n");
         return;
     }
-    if (uv_tcp_init(server->loop, &context->client)) { // int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle)
+    if (uv_tcp_init(server->loop, &client->tcp)) { // int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle)
         ERROR("uv_tcp_init\n");
-        free(context);
+        free(client);
         return;
     }
-    context->client.data = context;
-    if (uv_accept(server, (uv_stream_t *)&context->client)) { // int uv_accept(uv_stream_t* server, uv_stream_t* client)
+    client->tcp.data = client;
+    if (uv_accept(server, (uv_stream_t *)&client->tcp)) { // int uv_accept(uv_stream_t* server, uv_stream_t* client)
         ERROR("uv_accept\n");
-        request_close((uv_handle_t *)&context->client);
+        request_close((uv_handle_t *)&client->tcp);
         return;
     }
-    if (uv_read_start((uv_stream_t *)&context->client, parser_on_alloc, parser_on_read)) { // int uv_read_start(uv_stream_t* stream, uv_alloc_cb alloc_cb, uv_read_cb read_cb)
+    if (uv_read_start((uv_stream_t *)&client->tcp, parser_on_alloc, parser_on_read)) { // int uv_read_start(uv_stream_t* stream, uv_alloc_cb alloc_cb, uv_read_cb read_cb)
         ERROR("uv_read_start\n");
-        request_close((uv_handle_t *)&context->client);
+        request_close((uv_handle_t *)&client->tcp);
         return;
     }
 }
@@ -75,6 +75,6 @@ void request_close(uv_handle_t * handle) {
 }
 
 void request_on_close(uv_handle_t *handle) { // void (*uv_close_cb)(uv_handle_t* handle)
-    context_t *context = (context_t *)handle->data;
-    free(context);
+    client_t *client = (client_t *)handle->data;
+    free(client);
 }

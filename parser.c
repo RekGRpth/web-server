@@ -34,9 +34,9 @@ static const http_parser_settings parser_settings = {
 };
 
 void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
-    context_t *context = (context_t *)handle->data;
-    context->parser.data = context;
-    http_parser_init(&context->parser, HTTP_REQUEST); // void http_parser_init(http_parser *parser, enum http_parser_type type);
+    client_t *client = (client_t *)handle->data;
+    client->parser.data = client;
+    http_parser_init(&client->parser, HTTP_REQUEST); // void http_parser_init(http_parser *parser, enum http_parser_type type);
 //    suggested_size = 8;
 //    suggested_size = 16;
 //    suggested_size = 128;
@@ -48,18 +48,18 @@ void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) 
 void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
 //    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
 //    DEBUG("value=%.*s\n", (int)length, at);
-    context_t *context = (context_t *)stream->data;
+    client_t *client = (client_t *)stream->data;
     if (nread == UV_EOF) {
 //        ERROR("nread=UV_EOF\n");
-        if (!http_should_keep_alive(&context->parser)) { // int http_should_keep_alive(const http_parser *parser);
-            request_close((uv_handle_t *)&context->client);
+        if (!http_should_keep_alive(&client->parser)) { // int http_should_keep_alive(const http_parser *parser);
+            request_close((uv_handle_t *)&client->tcp);
         }
     } else if (nread < 0) {
         ERROR("nread=%li\n", nread);
-        request_close((uv_handle_t *)&context->client);
-    } else if ((ssize_t)http_parser_execute(&context->parser, (const http_parser_settings *)&parser_settings, buf->base, nread) < nread) { // size_t http_parser_execute(http_parser *parser, const http_parser_settings *settings, const char *data, size_t len);
-        ERROR("http_parser_execute(%i)%s\n", HTTP_PARSER_ERRNO(&context->parser), http_errno_description(HTTP_PARSER_ERRNO(&context->parser)));
-        request_close((uv_handle_t *)&context->client);
+        request_close((uv_handle_t *)&client->tcp);
+    } else if ((ssize_t)http_parser_execute(&client->parser, (const http_parser_settings *)&parser_settings, buf->base, nread) < nread) { // size_t http_parser_execute(http_parser *parser, const http_parser_settings *settings, const char *data, size_t len);
+        ERROR("http_parser_execute(%i)%s\n", HTTP_PARSER_ERRNO(&client->parser), http_errno_description(HTTP_PARSER_ERRNO(&client->parser)));
+        request_close((uv_handle_t *)&client->tcp);
     }
     free(buf->base);
 }
@@ -103,10 +103,10 @@ int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) 
     DEBUG("\n");
     DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
     DEBUG("content_length=%li\n", parser->content_length);
-    context_t *context = (context_t *)parser->data;
-    if (response_write(context)) {
+    client_t *client = (client_t *)parser->data;
+    if (response_write(client)) {
         ERROR("response_write\n");
-        request_close((uv_handle_t *)&context->client);
+        request_close((uv_handle_t *)&client->tcp);
     }
     return errno;
 }

@@ -9,9 +9,9 @@
 #   include "nodejs-http-parser/http_parser.h"
 #endif
 
-typedef struct context_t {
-    uv_tcp_t client;
+typedef struct client_t {
+    uv_tcp_t tcp;
     http_parser parser;
-} context_t;
+} client_t;
 
 #endif // _CONTEXT_H

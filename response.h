@@ -13,7 +13,7 @@ typedef struct write_req_t {
 void request_close(uv_handle_t * handle);
 
 // to response.c
-int response_write(context_t *context);
+int response_write(client_t *client);
 void response_on_write(uv_write_t *req, int status); // void (*uv_write_cb)(uv_write_t* req, int status)
 
 #endif // _RESPONSE_H
