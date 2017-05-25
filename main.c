@@ -3,8 +3,6 @@
 #include "macros.h"
 #include "main.h"
 
-static int request_thread_count;
-
 int main(int argc, char **argv) {
     if (uv_replace_allocator(malloc, realloc, calloc, free)) { // int uv_replace_allocator(uv_malloc_func malloc_func, uv_realloc_func realloc_func, uv_calloc_func calloc_func, uv_free_func free_func)
         ERROR("uv_replace_allocator\n");
@@ -31,7 +29,11 @@ int main(int argc, char **argv) {
         ERROR("uv_tcp_bind\n");
         return errno;
     }
-    uv_os_sock_t sock = handle.io_watcher.fd;
+    uv_os_sock_t sock;
+    if (uv_fileno((const uv_handle_t*)&handle, (uv_os_fd_t *)&sock)) { // int uv_fileno(const uv_handle_t* handle, uv_os_fd_t* fd)
+        ERROR("uv_fileno\n");
+        return errno;
+    }
     int cpu_count;
     uv_cpu_info_t *cpu_infos;
     if (uv_cpu_info(&cpu_infos, &cpu_count)) { // int uv_cpu_info(uv_cpu_info_t** cpu_infos, int* count)
@@ -39,23 +41,23 @@ int main(int argc, char **argv) {
         return errno;
     }
     uv_free_cpu_info(cpu_infos, cpu_count); // void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count)
-#ifndef REQUEST_THREAD_COUNT
-#   define REQUEST_THREAD_COUNT 0
+#ifndef THREAD_COUNT
+#   define THREAD_COUNT 0
 #endif
-#if REQUEST_THREAD_COUNT > 0
-    request_thread_count = REQUEST_THREAD_COUNT;
+#if THREAD_COUNT > 0
+    const int thread_count = THREAD_COUNT;
 #else
-    request_thread_count = cpu_count;
+    const int thread_count = cpu_count;
 #endif
-    uv_thread_t request_tid[request_thread_count];
-    for (int i = 0; i < request_thread_count; i++) {
-        if (uv_thread_create(&request_tid[i], request_on_start, (void *)&sock)) { // int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg)
+    uv_thread_t tid[thread_count];
+    for (int i = 0; i < thread_count; i++) {
+        if (uv_thread_create(&tid[i], request_on_start, (void *)&sock)) { // int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg)
             ERROR("uv_thread_create\n");
             return errno;
         }
     }
-    for (int i = 0; i < request_thread_count; i++) {
-        if (uv_thread_join(&request_tid[i])) { // int uv_thread_join(uv_thread_t *tid)
+    for (int i = 0; i < thread_count; i++) {
+        if (uv_thread_join(&tid[i])) { // int uv_thread_join(uv_thread_t *tid)
             ERROR("uv_thread_join\n");
             return errno;
         }

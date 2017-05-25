@@ -1,5 +1,5 @@
 ifneq (,$(THREAD))
-CFLAGS+=-DREQUEST_THREAD_COUNT=$(THREAD)
+CFLAGS+=-DTHREAD_COUNT=$(THREAD)
 endif
 CFLAGS+=-Wall -Wextra -Werror -Wno-unused-parameter
 ifeq (true,$(DEBUG))
