@@ -1,6 +1,7 @@
 #ifndef _CONTEXT_H
 #define _CONTEXT_H
 
+#include <postgresql/libpq-fe.h>
 #include <uv.h>
 
 #ifdef RAGEL_HTTP_PARSER
@@ -13,5 +14,12 @@ typedef struct client_t {
     uv_tcp_t tcp;
     http_parser parser;
 } client_t;
+
+typedef struct server_t {
+    uv_poll_t poll;
+    uv_timer_t timer;
+    PGconn *conn;
+    char *conninfo;
+} server_t;
 
 #endif // _CONTEXT_H

@@ -17,7 +17,8 @@ int main(int argc, char **argv) {
     uv_free_cpu_info(cpu_infos, cpu_count); // void uv_free_cpu_info(uv_cpu_info_t* cpu_infos, int count)
     char *uv_threadpool_size = getenv("UV_THREADPOOL_SIZE"); // char *getenv(const char *name);
     if (!uv_threadpool_size) {
-        int length = 2;
+        int length = sizeof("%d") - 1;
+//        DEBUG("length=%i\n", length);
         for (int number = cpu_count; number /= 10; length++);
         char str[length];
         if (snprintf(str, length, "%d", cpu_count) != length - 1) { // int snprintf(char *str, size_t size, const char *format, ...)

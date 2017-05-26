@@ -20,6 +20,38 @@
     "\r\n" \
     "<p>Hello, world!</p>\n"
 
+int response_write_response(client_t *client, char *response, int length) {
+    write_req_t *wr = (write_req_t *)malloc(sizeof(write_req_t));
+    if (wr == NULL) {
+        ERROR("malloc\n");
+        return errno;
+    }
+    wr->req.data = wr;
+#   define HEADERS \
+        "Content-Type: application/json\r\n" \
+        "Content-Length: %d\r\n" \
+        "Connection: keep-alive\r\n"
+    int headers_length = sizeof(HEADERS) - 1;
+    for (int number = length; number /= 10; headers_length++);
+    char headers[headers_length];
+    if (snprintf(headers, headers_length, HEADERS, length) != headers_length - 1) {
+        ERROR("snprintf\n");
+        return errno;
+    }
+    const uv_buf_t bufs[] = {
+        {.base = "HTTP/1.1 200 OK\r\n", .len = sizeof("HTTP/1.1 200 OK\r\n") - 1},
+        {.base = headers, .len = headers_length - 1},
+        {.base = "\r\n", .len = sizeof("\r\n") - 1},
+        {.base = response, .len = length}
+    };
+    if (uv_write(&wr->req, (uv_stream_t *)&client->tcp, bufs, sizeof(bufs) / sizeof(bufs[0]), response_on_write)) { // int uv_write(uv_write_t* req, uv_stream_t* handle, const uv_buf_t bufs[], unsigned int nbufs, uv_write_cb cb)
+        ERROR("uv_write\n");
+        free(wr);
+        return errno;
+    }
+    return errno;
+}
+
 int response_write(client_t *client) {
     write_req_t *wr = (write_req_t *)malloc(sizeof(write_req_t));
     if (wr == NULL) {

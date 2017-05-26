@@ -12,7 +12,10 @@
 #endif
 
 // from request.c
-void request_close(uv_handle_t * handle);
+void request_close(uv_handle_t *handle);
+
+// from postgres.c
+void postgres_query(client_t *client);
 
 // from response.c
 int response_write(client_t *client);

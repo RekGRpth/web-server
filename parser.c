@@ -104,10 +104,11 @@ int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) 
     DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
     DEBUG("content_length=%li\n", parser->content_length);
     client_t *client = (client_t *)parser->data;
-    if (response_write(client)) {
+    postgres_query(client);
+/*    if (response_write(client)) {
         ERROR("response_write\n");
         request_close((uv_handle_t *)&client->tcp);
-    }
+    }*/
     return errno;
 }
 
