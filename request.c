@@ -40,8 +40,8 @@ void request_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
         return;
     }
     server->loop = &loop;
-    server->conninfo = getenv("WEB_SERVER_PGCONN"); // char *getenv(const char *name)
-    if (!server->conninfo) server->conninfo = "postgresql://localhost";
+    server->conninfo = getenv("WEBSERVER_POSTGRES_CONNINFO"); // char *getenv(const char *name)
+    if (!server->conninfo) server->conninfo = "postgresql://localhost?application_name=webserver";
     if (postgres_connect(server)) {
         ERROR("postgres_connect\n");
         free(server);

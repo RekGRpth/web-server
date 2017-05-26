@@ -40,18 +40,18 @@ int main(int argc, char **argv) {
         ERROR("uv_tcp_init\n");
         return errno;
     }
-    char *web_server_ip = getenv("WEB_SERVER_IP"); // char *getenv(const char *name);
-    if (!web_server_ip) web_server_ip = "0.0.0.0";
-    char *web_server_port = getenv("WEB_SERVER_PORT"); // char *getenv(const char *name);
+    char *webserver_ip = getenv("WEBSERVER_IP"); // char *getenv(const char *name);
+    if (!webserver_ip) webserver_ip = "0.0.0.0";
+    char *webserver_port = getenv("WEBSERVER_PORT"); // char *getenv(const char *name);
     int port = 8080;
-    if (web_server_port) port = atoi(web_server_port);
+    if (webserver_port) port = atoi(webserver_port);
     struct sockaddr_in addr;
-    if (uv_ip4_addr(web_server_ip, port, &addr)) { // int uv_ip4_addr(const char* ip, int port, struct sockaddr_in* addr)
-        ERROR("uv_ip4_addr:%s:%i\n", web_server_ip, port);
+    if (uv_ip4_addr(webserver_ip, port, &addr)) { // int uv_ip4_addr(const char* ip, int port, struct sockaddr_in* addr)
+        ERROR("uv_ip4_addr:%s:%i\n", webserver_ip, port);
         return errno;
     }
     if (uv_tcp_bind(&handle, (const struct sockaddr *)&addr, 0)) { // int uv_tcp_bind(uv_tcp_t* handle, const struct sockaddr* addr, unsigned int flags)
-        ERROR("uv_tcp_bind:%s:%i\n", web_server_ip, port);
+        ERROR("uv_tcp_bind:%s:%i\n", webserver_ip, port);
         return errno;
     }
     uv_os_sock_t sock;
@@ -60,8 +60,8 @@ int main(int argc, char **argv) {
         return errno;
     }
     int thread_count = cpu_count;
-    char *web_server_thread_count = getenv("WEB_SERVER_THREAD_COUNT"); // char *getenv(const char *name);
-    if (web_server_thread_count) thread_count = atoi(web_server_thread_count);
+    char *webserver_thread_count = getenv("WEBSERVER_THREAD_COUNT"); // char *getenv(const char *name);
+    if (webserver_thread_count) thread_count = atoi(webserver_thread_count);
     if (thread_count < 1) thread_count = cpu_count;
     uv_thread_t tid[thread_count];
     for (int i = 0; i < thread_count; i++) {
