@@ -20,6 +20,20 @@ void request_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
         ERROR("uv_loop_init\n");
         return;
     }
+    uv_tcp_t handle;
+    if (uv_tcp_init(&loop, &handle)) { // int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle)
+        ERROR("uv_tcp_init\n");
+        return;
+    }
+    uv_os_sock_t client_sock = *((uv_os_sock_t *)arg);
+    if (uv_tcp_open(&handle, client_sock)) { // int uv_tcp_open(uv_tcp_t* handle, uv_os_sock_t sock)
+        ERROR("uv_tcp_open\n");
+        return;
+    }
+    if (uv_listen((uv_stream_t *)&handle, backlog, request_on_connect)) { // int uv_listen(uv_stream_t* stream, int backlog, uv_connection_cb cb)
+        ERROR("uv_listen\n");
+        return;
+    }
     server_t *server = (server_t *)malloc(sizeof(server_t));
     if (server == NULL) {
         ERROR("malloc\n");
@@ -31,23 +45,6 @@ void request_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
     if (postgres_connect(server)) {
         ERROR("postgres_connect\n");
         free(server);
-        return;
-    }
-    uv_tcp_t handle;
-    if (uv_tcp_init(&loop, &handle)) { // int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle)
-        ERROR("uv_tcp_init\n");
-        free(server);
-        return;
-    }
-    uv_os_sock_t client_sock = *((uv_os_sock_t *)arg);
-    if (uv_tcp_open(&handle, client_sock)) { // int uv_tcp_open(uv_tcp_t* handle, uv_os_sock_t sock)
-        ERROR("uv_tcp_open\n");
-        free(server);
-        return;
-    }
-    if (uv_listen((uv_stream_t *)&handle, backlog, request_on_connect)) { // int uv_listen(uv_stream_t* stream, int backlog, uv_connection_cb cb)
-        free(server);
-        ERROR("uv_listen\n");
         return;
     }
     if (uv_run(&loop, UV_RUN_DEFAULT)) { // int uv_run(uv_loop_t* loop, uv_run_mode mode)
