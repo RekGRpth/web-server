@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <uv.h>
-#include "macros.h"
 #include "context.h"
+#include "macros.h"
 #include "parser.h"
 
 #ifdef RAGEL_HTTP_PARSER
@@ -49,15 +49,9 @@ void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { /
 //    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
 //    DEBUG("value=%.*s\n", (int)length, at);
     client_t *client = (client_t *)stream->data;
-    if (nread == UV_EOF) {
-//        ERROR("nread=UV_EOF\n");
-        if (!http_should_keep_alive(&client->parser)) { // int http_should_keep_alive(const http_parser *parser);
-            request_close((uv_handle_t *)&client->tcp);
-        }
-    } else if (nread < 0) {
-        ERROR("nread=%li\n", nread);
-        request_close((uv_handle_t *)&client->tcp);
-    } else if ((ssize_t)http_parser_execute(&client->parser, (const http_parser_settings *)&parser_settings, buf->base, nread) < nread) { // size_t http_parser_execute(http_parser *parser, const http_parser_settings *settings, const char *data, size_t len);
+    if (nread == UV_EOF) { ERROR("nread=UV_EOF\n"); if (!http_should_keep_alive(&client->parser)) request_close((uv_handle_t *)&client->tcp); } // int http_should_keep_alive(const http_parser *parser);
+    else if (nread < 0) { ERROR("nread=%li\n", nread); request_close((uv_handle_t *)&client->tcp); }
+    else if ((ssize_t)http_parser_execute(&client->parser, (const http_parser_settings *)&parser_settings, buf->base, nread) < nread) { // size_t http_parser_execute(http_parser *parser, const http_parser_settings *settings, const char *data, size_t len);
         ERROR("http_parser_execute(%i)%s\n", HTTP_PARSER_ERRNO(&client->parser), http_errno_description(HTTP_PARSER_ERRNO(&client->parser)));
         request_close((uv_handle_t *)&client->tcp);
     }
@@ -104,12 +98,12 @@ int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) 
     DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
     DEBUG("content_length=%li\n", parser->content_length);
     client_t *client = (client_t *)parser->data;
-    postgres_query(client);
+    if (postgres_query(client)) { ERROR("postgres_query\n"); return errno; }
 /*    if (response_write(client)) {
         ERROR("response_write\n");
         request_close((uv_handle_t *)&client->tcp);
     }*/
-    return errno;
+    return 0;
 }
 
 int parser_on_chunk_header(http_parser *parser) { // typedef int (*http_cb) (http_parser*);

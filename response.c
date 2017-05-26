@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <uv.h>
-#include "macros.h"
 #include "context.h"
+#include "macros.h"
 #include "response.h"
 
 #ifdef RAGEL_HTTP_PARSER
@@ -20,7 +20,8 @@
     "\r\n" \
     "<p>Hello, world!</p>\n"
 
-int response_write_response(client_t *client, char *response, int length) {
+int response_write_response(postgres_t *postgres, char *response, int length) {
+    client_t *client = postgres->client;
     write_req_t *wr = (write_req_t *)malloc(sizeof(write_req_t));
     if (wr == NULL) {
         ERROR("malloc\n");

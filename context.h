@@ -3,6 +3,7 @@
 
 #include <postgresql/libpq-fe.h>
 #include <uv.h>
+#include "queue.h"
 
 #ifdef RAGEL_HTTP_PARSER
 #   include "ragel-http-parser/http_parser.h"
@@ -10,17 +11,23 @@
 #   include "nodejs-http-parser/http_parser.h"
 #endif
 
+typedef struct server_t {
+    QUEUE queue;
+} server_t;
+
 typedef struct client_t {
     uv_tcp_t tcp;
     http_parser parser;
 } client_t;
 
-typedef struct server_t {
-    uv_loop_t *loop;
+typedef struct postgres_t {
+    QUEUE queue;
+//    uv_loop_t *loop;
     uv_poll_t poll;
-    uv_timer_t timer;
+//    uv_timer_t timer;
     PGconn *conn;
     char *conninfo;
-} server_t;
+    client_t *client;
+} postgres_t;
 
 #endif // _CONTEXT_H

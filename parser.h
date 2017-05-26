@@ -1,5 +1,5 @@
-#ifndef _SERVER_H
-#define _SERVER_H
+#ifndef _PARSER_H
+#define _PARSER_H
 
 #include <stdlib.h>
 #include <uv.h>
@@ -15,7 +15,7 @@
 void request_close(uv_handle_t *handle);
 
 // from postgres.c
-void postgres_query(client_t *client);
+int postgres_query(client_t *client);
 
 // from response.c
 int response_write(client_t *client);
@@ -44,4 +44,4 @@ int parser_on_var_value(http_parser *parser, const char *at, size_t length); // 
 int parser_on_headers_begin(http_parser *parser); // typedef int (*http_cb) (http_parser*);
 #endif
 
-#endif // _SERVER_H
+#endif // _PARSER_H
