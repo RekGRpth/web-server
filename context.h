@@ -16,6 +16,7 @@ typedef struct client_t {
 } client_t;
 
 typedef struct server_t {
+    uv_loop_t *loop;
     uv_poll_t poll;
     uv_timer_t timer;
     PGconn *conn;

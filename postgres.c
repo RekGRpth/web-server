@@ -19,7 +19,7 @@ void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_
         case CONNECTION_OK: DEBUG("CONNECTION_OK\n"); break;
         case CONNECTION_BAD: {
             ERROR("PQstatus==CONNECTION_BAD %s\n", PQerrorMessage(server->conn)); // char *PQerrorMessage(const PGconn *conn)
-            postgres_reconnect(handle->loop);
+            postgres_reconnect(server);
         } return;
         default: switch (PQconnectPoll(server->conn)) { // PostgresPollingStatusType PQconnectPoll(PGconn *conn)
             case PGRES_POLLING_READING: DEBUG("PGRES_POLLING_READING\n"); if (uv_poll_start(&server->poll, UV_READABLE, postgres_on_poll)) { // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
@@ -32,12 +32,12 @@ void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_
             } return;
             case PGRES_POLLING_FAILED: {
                 ERROR("PGRES_POLLING_FAILED\n");
-                postgres_reconnect(handle->loop);
+                postgres_reconnect(server);
             } return;
             case PGRES_POLLING_OK: DEBUG("PGRES_POLLING_OK\n"); { 
                 if (PQstatus(server->conn) != CONNECTION_OK) { // ConnStatusType PQstatus(const PGconn *conn)
                     ERROR("PQstatus!=CONNECTION_OK\n");
-                    postgres_reconnect(handle->loop);
+                    postgres_reconnect(server);
                     return;
                 }
                 if (!PQsendQuery(server->conn, "listen \"gwan\";")) { // int PQsendQuery(PGconn *conn, const char *command)
@@ -58,7 +58,7 @@ void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_
             uv_os_sock_t server_sock;
             if ((server_sock = PQsocket(server->conn)) < 0) { // int PQsocket(const PGconn *conn)
                 ERROR("PQsocket=%i\n", server_sock);
-                postgres_reconnect(handle->loop);
+                postgres_reconnect(server);
                 return;
             }
             return;
@@ -108,15 +108,14 @@ void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_
     }
 }
 
-int postgres_reconnect(uv_loop_t *loop) {
-    server_t *server = (server_t *)loop->data;
+int postgres_reconnect(server_t *server) {
     if (server->conn) {
         PQfinish(server->conn); // void PQfinish(PGconn *conn)
     }
     if (uv_is_active((uv_handle_t *)&server->poll)) { // int uv_is_active(const uv_handle_t* handle)
         uv_poll_stop(&server->poll); // int uv_poll_stop(uv_poll_t* poll)
     }
-    if (uv_timer_init(loop, &server->timer)) { // int uv_timer_init(uv_loop_t* loop, uv_timer_t* handle)
+    if (uv_timer_init(server->loop, &server->timer)) { // int uv_timer_init(uv_loop_t* loop, uv_timer_t* handle)
         ERROR("uv_timer_init\n");
         return errno;
     }
@@ -129,11 +128,11 @@ int postgres_reconnect(uv_loop_t *loop) {
 }
 
 void postgres_on_timer(uv_timer_t *handle) { // void (*uv_timer_cb)(uv_timer_t* handle)
-    postgres_connect(handle->loop);
+    server_t *server = (server_t *)handle->data;
+    postgres_connect(server);
 }
 
-int postgres_connect(uv_loop_t *loop) {
-    server_t *server = (server_t *)loop->data;
+int postgres_connect(server_t *server) {
     if (!(server->conn = PQconnectStart(server->conninfo))) { // PGconn *PQconnectStart(const char *conninfo)
         ERROR("PQconnectStart\n");
         return errno;
@@ -142,9 +141,9 @@ int postgres_connect(uv_loop_t *loop) {
     uv_os_sock_t server_sock;
     if ((server_sock = PQsocket(server->conn)) < 0) { // int PQsocket(const PGconn *conn)
         ERROR("PQsocket=%i\n", server_sock);
-        return postgres_reconnect(loop);
+        return postgres_reconnect(server);
     }
-    if (uv_poll_init_socket(loop, &server->poll, server_sock)) { // int uv_poll_init_socket(uv_loop_t* loop, uv_poll_t* handle, uv_os_sock_t socket)
+    if (uv_poll_init_socket(server->loop, &server->poll, server_sock)) { // int uv_poll_init_socket(uv_loop_t* loop, uv_poll_t* handle, uv_os_sock_t socket)
         ERROR("uv_poll_init_socket\n");
         return errno;
     }

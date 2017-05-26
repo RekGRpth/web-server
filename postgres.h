@@ -20,8 +20,8 @@ int response_write_response(client_t *client, char *response, int length);
 
 // to postgres.c
 void postgres_on_poll(uv_poll_t *handle, int status, int events); // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)
-int postgres_connect(uv_loop_t *loop);
-int postgres_reconnect(uv_loop_t *loop);
+int postgres_connect(server_t *server);
+int postgres_reconnect(server_t *server);
 void postgres_on_timer(uv_timer_t *handle); // void (*uv_timer_cb)(uv_timer_t* handle)
 void postgres_query(client_t *client);
 

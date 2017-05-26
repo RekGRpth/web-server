@@ -25,10 +25,10 @@ void request_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
         ERROR("malloc\n");
         return;
     }
-    loop.data = server;
+    server->loop = &loop;
     server->conninfo = getenv("WEB_SERVER_PGCONN"); // char *getenv(const char *name)
     if (!server->conninfo) server->conninfo = "postgresql://localhost";
-    if (postgres_connect(&loop)) {
+    if (postgres_connect(server)) {
         ERROR("postgres_connect\n");
         free(server);
         return;
