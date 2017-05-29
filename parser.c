@@ -59,97 +59,102 @@ void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { /
 }
 
 int parser_on_message_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
+//    DEBUG("\n");
     return 0;
 }
 
 int parser_on_url(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("url(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("url(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_status(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("status(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("status(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_header_field(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("header_field(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("header_field(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_header_value(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("header_value(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("header_value(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_headers_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
+//    DEBUG("\n");
     return 0;
 }
 
 int parser_on_body(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("body(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("body(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
-    DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
-    DEBUG("content_length=%li\n", parser->content_length);
+//    DEBUG("\n");
+//    DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
+//    DEBUG("content_length=%li\n", parser->content_length);
     client_t *client = (client_t *)parser->data;
-    if (postgres_query(client)) { ERROR("postgres_query\n"); return errno; }
+//    if (postgres_query(client)) { ERROR("postgres_query\n"); return errno; }
+//    uv_work_t req = { .data = (void *)client };
+    uv_work_t *req = (uv_work_t *)malloc(sizeof(uv_work_t));
+    if (!req) { ERROR("malloc\n"); return errno; }
+    req->data = (void *)client;
+    if (uv_queue_work(client->tcp.loop, req, postgres_on_work, postgres_after_work)) { ERROR("uv_queue_work\n"); return errno; } // int uv_queue_work(uv_loop_t* loop, uv_work_t* req, uv_work_cb work_cb, uv_after_work_cb after_work_cb)
     return 0;
 }
 
 int parser_on_chunk_header(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
+//    DEBUG("\n");
     return 0;
 }
 
 int parser_on_chunk_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
+//    DEBUG("\n");
     return 0;
 }
 
 #ifdef RAGEL_HTTP_PARSER
 int parser_on_version(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("version(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("version(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_method(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("method(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("method(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_query(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("query(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("query(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_path(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("path(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("path(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_arg(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("arg(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("arg(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_var_field(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("var_field(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("var_field(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_var_value(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-    DEBUG("var_value(%li)=%.*s\n", length, (int)length, at);
+//    DEBUG("var_value(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
 int parser_on_headers_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    DEBUG("\n");
+//    DEBUG("\n");
     return 0;
 }
 #endif

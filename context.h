@@ -15,6 +15,7 @@ typedef struct server_t {
     uv_cond_t cond;
     uv_mutex_t mutex;
     QUEUE queue;
+    unsigned int idle;
 } server_t;
 
 typedef struct client_t {

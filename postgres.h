@@ -26,5 +26,7 @@ int postgres_query(client_t *client);
 int postgres_queue(uv_loop_t *loop);
 void postgres_push(postgres_t *postgres);
 postgres_t *postgres_pop(server_t *server);
+void postgres_on_work(uv_work_t *req); // void (*uv_work_cb)(uv_work_t* req)
+void postgres_after_work(uv_work_t *req, int status); // void (*uv_after_work_cb)(uv_work_t* req, int status)
 
 #endif // _POSTGRES_H
