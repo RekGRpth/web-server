@@ -9,8 +9,7 @@ void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);
 void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf); // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
 
 // from postgres.c
-int postgres_pool_init(uv_loop_t *loop);
-int postgres_pool_free(uv_loop_t *loop);
+int postgres_queue(uv_loop_t *loop);
 
 // to request.c
 void request_on_start(void *arg); // void (*uv_thread_cb)(void* arg)

@@ -7,7 +7,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define DEBUG(fmt, ...)  fprintf(stdout, "DEBUG:%lu:%s:%d:%s:" fmt, syscall(SYS_gettid), __FILE__, __LINE__, __func__, ##__VA_ARGS__)
-#define ERROR(fmt, ...)  fprintf(stderr, "ERROR:%lu:%s:%d:%s(%i)%s:" fmt, syscall(SYS_gettid), __FILE__, __LINE__, __func__, errno, strerror(errno), ##__VA_ARGS__)
+#define DEBUG(fmt, ...) fprintf(stdout, "DEBUG:%lu:%s:%d:%s:" fmt, syscall(SYS_gettid), __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+#define ERROR(fmt, ...) fprintf(stderr, "ERROR:%lu:%s:%d:%s(%i)%s:" fmt, syscall(SYS_gettid), __FILE__, __LINE__, __func__, errno, strerror(errno), ##__VA_ARGS__)
+//#define DIF(cond, cmd) if ((cond)) { ERROR("\n"); cmd; }
 
 #endif // _MACROS_H

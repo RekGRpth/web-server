@@ -12,6 +12,8 @@
 #endif
 
 typedef struct server_t {
+    uv_cond_t cond;
+    uv_mutex_t mutex;
     QUEUE queue;
 } server_t;
 
@@ -22,9 +24,7 @@ typedef struct client_t {
 
 typedef struct postgres_t {
     QUEUE queue;
-//    uv_loop_t *loop;
     uv_poll_t poll;
-//    uv_timer_t timer;
     PGconn *conn;
     char *conninfo;
     client_t *client;
