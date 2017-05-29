@@ -16,7 +16,7 @@ void request_close(uv_handle_t *handle);
 
 // from response.c
 //int response_write_response(client_t *client, char *response, int length);
-int response_write_response(postgres_t *postgres, char *response, int length);
+int response_write_response(postgres_t *postgres, char *value, int length);
 
 // to postgres.c
 void postgres_on_poll(uv_poll_t *handle, int status, int events); // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)

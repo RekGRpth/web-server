@@ -4,10 +4,10 @@
 #include <uv.h>
 #include "context.h"
 
-typedef struct write_req_t {
+typedef struct response_t {
     uv_write_t req;
-    uv_buf_t buf;
-} write_req_t;
+//    uv_buf_t buf;
+} response_t;
 
 // from request.c
 void request_close(uv_handle_t *handle);
@@ -17,6 +17,6 @@ void parser_init(client_t *client);
 
 // to response.c
 void response_on_write(uv_write_t *req, int status); // void (*uv_write_cb)(uv_write_t* req, int status)
-int response_write_response(postgres_t *postgres, char *response, int length);
+int response_write_response(postgres_t *postgres, char *value, int length);
 
 #endif // _RESPONSE_H
