@@ -4,7 +4,8 @@
 #include "macros.h"
 #include "response.h"
 
-int response_write_response(client_t *client, char *response, int length) {
+int response_write_response(postgres_t *postgres, char *response, int length) {
+    client_t *client = (client_t *)postgres->client;
     write_req_t *wr = (write_req_t *)malloc(sizeof(write_req_t));
     if (wr == NULL) { ERROR("malloc\n"); return errno; }
     wr->req.data = wr;
@@ -22,8 +23,9 @@ int response_write_response(client_t *client, char *response, int length) {
         {.base = "\r\n", .len = sizeof("\r\n") - 1},
         {.base = response, .len = length}
     };
-    if (uv_write(&wr->req, (uv_stream_t *)&client->tcp, bufs, sizeof(bufs) / sizeof(bufs[0]), response_on_write)) { ERROR("uv_write\n"); free(wr); return errno; } // int uv_write(uv_write_t* req, uv_stream_t* handle, const uv_buf_t bufs[], unsigned int nbufs, uv_write_cb cb)
-    return 0;
+    if (uv_write(&wr->req, (uv_stream_t *)&client->tcp, bufs, sizeof(bufs) / sizeof(bufs[0]), response_on_write)) { ERROR("uv_write\n"); free(wr); /*return errno;*/ } // int uv_write(uv_write_t* req, uv_stream_t* handle, const uv_buf_t bufs[], unsigned int nbufs, uv_write_cb cb)
+    postgres->client = NULL;
+    return errno;
 }
 
 void response_on_write(uv_write_t *req, int status) { // void (*uv_write_cb)(uv_write_t* req, int status)

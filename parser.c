@@ -98,12 +98,11 @@ int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) 
 //    DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
 //    DEBUG("content_length=%li\n", parser->content_length);
     client_t *client = (client_t *)parser->data;
-//    if (postgres_query(client)) { ERROR("postgres_query\n"); return errno; }
-//    uv_work_t req = { .data = (void *)client };
-    uv_work_t *req = (uv_work_t *)malloc(sizeof(uv_work_t));
+    if (postgres_query(client)) { ERROR("postgres_query\n"); return errno; }
+/*    uv_work_t *req = (uv_work_t *)malloc(sizeof(uv_work_t));
     if (!req) { ERROR("malloc\n"); return errno; }
     req->data = (void *)client;
-    if (uv_queue_work(client->tcp.loop, req, postgres_on_work, postgres_after_work)) { ERROR("uv_queue_work\n"); return errno; } // int uv_queue_work(uv_loop_t* loop, uv_work_t* req, uv_work_cb work_cb, uv_after_work_cb after_work_cb)
+    if (uv_queue_work(client->tcp.loop, req, postgres_on_work, postgres_after_work)) { ERROR("uv_queue_work\n"); return errno; } // int uv_queue_work(uv_loop_t* loop, uv_work_t* req, uv_work_cb work_cb, uv_after_work_cb after_work_cb)*/
     return 0;
 }
 

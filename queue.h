@@ -13,96 +13,96 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef QUEUE_H_
-#define QUEUE_H_
+#ifndef _QUEUE_H_
+#define _QUEUE_H_
 
 #include <stddef.h>
 
-typedef void *QUEUE[2];
+typedef void *queue_t[2];
 
 /* Private macros. */
-#define QUEUE_NEXT(q)       (*(QUEUE **) &((*(q))[0]))
-#define QUEUE_PREV(q)       (*(QUEUE **) &((*(q))[1]))
-#define QUEUE_PREV_NEXT(q)  (QUEUE_NEXT(QUEUE_PREV(q)))
-#define QUEUE_NEXT_PREV(q)  (QUEUE_PREV(QUEUE_NEXT(q)))
+#define queue_next(q)       (*(queue_t **) &((*(q))[0]))
+#define queue_prev(q)       (*(queue_t **) &((*(q))[1]))
+#define queue_prev_next(q)  (queue_next(queue_prev(q)))
+#define queue_next_prev(q)  (queue_prev(queue_next(q)))
 
 /* Public macros. */
-#define QUEUE_DATA(ptr, type, field)                                          \
+#define queue_data(ptr, type, field)                                          \
   ((type *) ((char *) (ptr) - offsetof(type, field)))
 
-/* Important note: mutating the list while QUEUE_FOREACH is
+/* Important note: mutating the list while queue_foreach is
  * iterating over its elements results in undefined behavior.
  */
-#define QUEUE_FOREACH(q, h)                                                   \
-  for ((q) = QUEUE_NEXT(h); (q) != (h); (q) = QUEUE_NEXT(q))
+#define queue_foreach(q, h)                                                   \
+  for ((q) = queue_next(h); (q) != (h); (q) = queue_next(q))
 
-#define QUEUE_EMPTY(q)                                                        \
-  ((const QUEUE *) (q) == (const QUEUE *) QUEUE_NEXT(q))
+#define queue_empty(q)                                                        \
+  ((const queue_t *) (q) == (const queue_t *) queue_next(q))
 
-#define QUEUE_HEAD(q)                                                         \
-  (QUEUE_NEXT(q))
+#define queue_head(q)                                                         \
+  (queue_next(q))
 
-#define QUEUE_INIT(q)                                                         \
+#define queue_init(q)                                                         \
   do {                                                                        \
-    QUEUE_NEXT(q) = (q);                                                      \
-    QUEUE_PREV(q) = (q);                                                      \
+    queue_next(q) = (q);                                                      \
+    queue_prev(q) = (q);                                                      \
   }                                                                           \
   while (0)
 
-#define QUEUE_ADD(h, n)                                                       \
+#define queue_add(h, n)                                                       \
   do {                                                                        \
-    QUEUE_PREV_NEXT(h) = QUEUE_NEXT(n);                                       \
-    QUEUE_NEXT_PREV(n) = QUEUE_PREV(h);                                       \
-    QUEUE_PREV(h) = QUEUE_PREV(n);                                            \
-    QUEUE_PREV_NEXT(h) = (h);                                                 \
+    queue_prev_next(h) = queue_next(n);                                       \
+    queue_next_prev(n) = queue_prev(h);                                       \
+    queue_prev(h) = queue_prev(n);                                            \
+    queue_prev_next(h) = (h);                                                 \
   }                                                                           \
   while (0)
 
-#define QUEUE_SPLIT(h, q, n)                                                  \
+#define queue_split(h, q, n)                                                  \
   do {                                                                        \
-    QUEUE_PREV(n) = QUEUE_PREV(h);                                            \
-    QUEUE_PREV_NEXT(n) = (n);                                                 \
-    QUEUE_NEXT(n) = (q);                                                      \
-    QUEUE_PREV(h) = QUEUE_PREV(q);                                            \
-    QUEUE_PREV_NEXT(h) = (h);                                                 \
-    QUEUE_PREV(q) = (n);                                                      \
+    queue_prev(n) = queue_prev(h);                                            \
+    queue_prev_next(n) = (n);                                                 \
+    queue_next(n) = (q);                                                      \
+    queue_prev(h) = queue_prev(q);                                            \
+    queue_prev_next(h) = (h);                                                 \
+    queue_prev(q) = (n);                                                      \
   }                                                                           \
   while (0)
 
-#define QUEUE_MOVE(h, n)                                                      \
+#define queue_move(h, n)                                                      \
   do {                                                                        \
-    if (QUEUE_EMPTY(h))                                                       \
-      QUEUE_INIT(n);                                                          \
+    if (queue_empty(h))                                                       \
+      queue_init(n);                                                          \
     else {                                                                    \
-      QUEUE* q = QUEUE_HEAD(h);                                               \
-      QUEUE_SPLIT(h, q, n);                                                   \
+      queue_t* q = queue_head(h);                                               \
+      queue_split(h, q, n);                                                   \
     }                                                                         \
   }                                                                           \
   while (0)
 
-#define QUEUE_INSERT_HEAD(h, q)                                               \
+#define queue_insert_head(h, q)                                               \
   do {                                                                        \
-    QUEUE_NEXT(q) = QUEUE_NEXT(h);                                            \
-    QUEUE_PREV(q) = (h);                                                      \
-    QUEUE_NEXT_PREV(q) = (q);                                                 \
-    QUEUE_NEXT(h) = (q);                                                      \
+    queue_next(q) = queue_next(h);                                            \
+    queue_prev(q) = (h);                                                      \
+    queue_next_prev(q) = (q);                                                 \
+    queue_next(h) = (q);                                                      \
   }                                                                           \
   while (0)
 
-#define QUEUE_INSERT_TAIL(h, q)                                               \
+#define queue_insert_tail(h, q)                                               \
   do {                                                                        \
-    QUEUE_NEXT(q) = (h);                                                      \
-    QUEUE_PREV(q) = QUEUE_PREV(h);                                            \
-    QUEUE_PREV_NEXT(q) = (q);                                                 \
-    QUEUE_PREV(h) = (q);                                                      \
+    queue_next(q) = (h);                                                      \
+    queue_prev(q) = queue_prev(h);                                            \
+    queue_prev_next(q) = (q);                                                 \
+    queue_prev(h) = (q);                                                      \
   }                                                                           \
   while (0)
 
-#define QUEUE_REMOVE(q)                                                       \
+#define queue_remove(q)                                                       \
   do {                                                                        \
-    QUEUE_PREV_NEXT(q) = QUEUE_NEXT(q);                                       \
-    QUEUE_NEXT_PREV(q) = QUEUE_PREV(q);                                       \
+    queue_prev_next(q) = queue_next(q);                                       \
+    queue_next_prev(q) = queue_prev(q);                                       \
   }                                                                           \
   while (0)
 
-#endif /* QUEUE_H_ */
+#endif // _QUEUE_H_

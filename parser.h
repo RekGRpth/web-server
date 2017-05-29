@@ -15,9 +15,9 @@
 void request_close(uv_handle_t *handle);
 
 // from postgres.c
-//int postgres_query(client_t *client);
-void postgres_on_work(uv_work_t *req); // void (*uv_work_cb)(uv_work_t* req)
-void postgres_after_work(uv_work_t *req, int status); // void (*uv_after_work_cb)(uv_work_t* req, int status)
+int postgres_query(client_t *client);
+//void postgres_on_work(uv_work_t *req); // void (*uv_work_cb)(uv_work_t* req)
+//void postgres_after_work(uv_work_t *req, int status); // void (*uv_after_work_cb)(uv_work_t* req, int status)
 
 // to parser.c
 void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf); // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
