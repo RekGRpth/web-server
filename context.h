@@ -14,6 +14,7 @@
 typedef struct server_t server_t;
 typedef struct client_t client_t;
 typedef struct postgres_t postgres_t;
+typedef struct response_t response_t;
 
 typedef struct server_t {
     queue_t postgres;
@@ -34,5 +35,9 @@ typedef struct postgres_t {
     char *conninfo;
     client_t *client;
 } postgres_t;
+
+typedef struct response_t {
+    uv_write_t req;
+} response_t;
 
 #endif // _CONTEXT_H

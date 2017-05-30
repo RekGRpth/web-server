@@ -4,7 +4,7 @@
 #include "macros.h"
 #include "response.h"
 
-int response_write_response(client_t *client, char *value, int length) {
+int response_write(client_t *client, char *value, int length) {
     response_t *response = (response_t *)malloc(sizeof(response_t));
     if (response == NULL) { ERROR("malloc\n"); return errno; }
     response->req.data = response;
@@ -28,7 +28,7 @@ int response_write_response(client_t *client, char *value, int length) {
 
 void response_on_write(uv_write_t *req, int status) { // void (*uv_write_cb)(uv_write_t* req, int status)
     client_t *client = (client_t *)req->handle->data;
-    if (!http_should_keep_alive(&client->parser)) request_close((uv_handle_t *)req->handle); // int http_should_keep_alive(const http_parser *parser);
+    if (!should_keep_alive(client)) request_close((uv_handle_t *)req->handle);
     else parser_init(client);
     response_t *response = (response_t *)req->data;
     free(response);

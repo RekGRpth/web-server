@@ -15,10 +15,13 @@
 void request_close(uv_handle_t *handle);
 
 // from postgres.c
-int postgres_push_client(client_t *client);
+int postgres_client(client_t *client);
 
 // to parser.c
 void parser_init(client_t *client);
+int should_keep_alive(client_t *client);
+size_t parser_execute(client_t *client, const char *data, size_t len);
+void parser_close(client_t *client);
 void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf); // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
 void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf); // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
 int parser_on_message_begin(http_parser *parser); // typedef int (*http_cb) (http_parser*);
