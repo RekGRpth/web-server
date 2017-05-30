@@ -5,6 +5,7 @@
 #include "context.h"
 #include "macros.h"
 #include "request.h"
+#include "queue.h"
 
 void request_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
     uv_loop_t loop;
@@ -31,6 +32,7 @@ void request_on_connect(uv_stream_t *server, int status) { // void (*uv_connecti
     if (!client) { ERROR("malloc\n"); return; }
     if (uv_tcp_init(server->loop, &client->tcp)) { ERROR("uv_tcp_init\n"); free(client); return; } // int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle)
     client->tcp.data = client;
+    queue_init(&client->queue);
     if (uv_accept(server, (uv_stream_t *)&client->tcp)) { ERROR("uv_accept\n"); request_close((uv_handle_t *)&client->tcp); return; } // int uv_accept(uv_stream_t* server, uv_stream_t* client)
     if (uv_read_start((uv_stream_t *)&client->tcp, parser_on_alloc, parser_on_read)) { ERROR("uv_read_start\n"); request_close((uv_handle_t *)&client->tcp); return; } // int uv_read_start(uv_stream_t* stream, uv_alloc_cb alloc_cb, uv_read_cb read_cb)
 }

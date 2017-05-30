@@ -11,19 +11,20 @@
 #   include "nodejs-http-parser/http_parser.h"
 #endif
 
-typedef enum state_t {STATE_IDLE, STATE_WORK} state_t;
+typedef struct server_t server_t;
+typedef struct client_t client_t;
+typedef struct postgres_t postgres_t;
 
 typedef struct server_t {
-//    uv_cond_t cond;
-//    uv_mutex_t mutex;
-    queue_t queue;
-//    queue_t idle;
-//    queue_t work;
+    queue_t postgres;
+    queue_t client;
 } server_t;
 
 typedef struct client_t {
+    queue_t queue;
     uv_tcp_t tcp;
     http_parser parser;
+    postgres_t *postgres;
 } client_t;
 
 typedef struct postgres_t {
@@ -32,7 +33,6 @@ typedef struct postgres_t {
     PGconn *conn;
     char *conninfo;
     client_t *client;
-//    state_t state;
 } postgres_t;
 
 #endif // _CONTEXT_H

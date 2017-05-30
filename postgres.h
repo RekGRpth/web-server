@@ -15,19 +15,16 @@
 void request_close(uv_handle_t *handle);
 
 // from response.c
-//int response_write_response(client_t *client, char *response, int length);
-int response_write_response(postgres_t *postgres, char *value, int length);
+int response_write_response(client_t *client, char *value, int length);
 
 // to postgres.c
 void postgres_on_poll(uv_poll_t *handle, int status, int events); // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)
 int postgres_connect(uv_loop_t *loop, postgres_t *postgres);
 int postgres_reconnect(postgres_t *postgres);
 void postgres_on_timer(uv_timer_t *handle); // void (*uv_timer_cb)(uv_timer_t* handle)
-int postgres_query(client_t *client);
 int postgres_queue(uv_loop_t *loop);
-//void postgres_push(postgres_t *postgres);
-//postgres_t *postgres_pop(server_t *server);
-//void postgres_on_work(uv_work_t *req); // void (*uv_work_cb)(uv_work_t* req)
-//void postgres_after_work(uv_work_t *req, int status); // void (*uv_after_work_cb)(uv_work_t* req, int status)
+int postgres_push_postgres(postgres_t *postgres);
+int postgres_push_client(client_t *client);
+int postgres_process(server_t *server);
 
 #endif // _POSTGRES_H

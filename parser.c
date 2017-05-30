@@ -98,7 +98,7 @@ int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) 
 //    DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
 //    DEBUG("content_length=%li\n", parser->content_length);
     client_t *client = (client_t *)parser->data;
-    if (postgres_query(client)) { ERROR("postgres_query\n"); return errno; }
+    if (postgres_push_client(client)) { ERROR("postgres_push_client\n"); return errno; }
 /*    uv_work_t *req = (uv_work_t *)malloc(sizeof(uv_work_t));
     if (!req) { ERROR("malloc\n"); return errno; }
     req->data = (void *)client;
