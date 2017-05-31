@@ -12,9 +12,10 @@
 
 // from request.c
 void request_close(client_t *client);
+void request_free(request_t *request);
 
 // from response.c
-int response_write(request_t *request, char *value, int length);
+int response_write(client_t *client, char *value, int length);
 
 // to postgres.c
 void postgres_on_poll(uv_poll_t *handle, int status, int events); // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)

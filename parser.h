@@ -5,6 +5,7 @@
 
 // from request.c
 void request_close(client_t *client);
+void request_free(request_t *request);
 
 // from postgres.c
 int postgres_push_request(request_t *request);

@@ -42,24 +42,36 @@ void request_close(client_t *client) {
         request_free(request);
     }*/
 //    if (handle->type != UV_TCP) { ERROR("handle->type=%i\n", handle->type); /*free(client); */return; }
+/*    while (!queue_empty(&client->request_queue)) {
+        queue_t *queue = queue_head(&client->request_queue);// queue_remove(queue); queue_init(queue);
+        request_t *request = queue_data(queue, request_t, client_queue);
+        DEBUG("request=%p, request->postgres=%p\n", request, request->postgres);
+        request_free(request);
+    }*/
     if (!uv_is_closing(handle)) uv_close(handle, request_on_close); // int uv_is_closing(const uv_handle_t* handle); void uv_close(uv_handle_t* handle, uv_close_cb close_cb)
 }
 
 void request_on_close(uv_handle_t *handle) { // void (*uv_close_cb)(uv_handle_t* handle)
-    DEBUG("handle=%p\n", handle);
+//    DEBUG("handle=%p\n", handle);
     client_t *client = (client_t *)handle->data;
     while (!queue_empty(&client->request_queue)) {
-        queue_t *queue = queue_head(&client->request_queue); queue_remove(queue); queue_init(queue);
+        queue_t *queue = queue_head(&client->request_queue);// queue_remove(queue); queue_init(queue);
         request_t *request = queue_data(queue, request_t, client_queue);
-        DEBUG("request=%p, request->postgres=%p\n", request, request->postgres);
+//        DEBUG("request=%p, request->postgres=%p\n", request, request->postgres);
         request_free(request);
     }
     free(client);
 }
 
 void request_free(request_t *request) {
-    DEBUG("request=%p, request->postgres=%p\n", request, request->postgres);
-    if (request->postgres) postgres_push_postgres(request->postgres);
+//    DEBUG("request=%p, request->postgres=%p\n", request, request->postgres);
+    if (request->postgres) {
+//        DEBUG("request->postgres->request=%p\n", request->postgres->request);
+        postgres_t *postgres = request->postgres;
+        request->postgres = NULL;
+//        postgres->request = NULL;
+        postgres_push_postgres(postgres);
+    }
     queue_remove(&request->client_queue);
     free(request);
 }
