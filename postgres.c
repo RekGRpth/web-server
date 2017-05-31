@@ -1,10 +1,11 @@
 #include <stdlib.h> // malloc, free, getenv, atoi
 #include "postgres.h"
+#include "macros.h"
 
 int postgres_queue(uv_loop_t *loop) {
     server_t *server = (server_t *)loop->data;
-    queue_init(&server->postgres);
-    queue_init(&server->request);
+    queue_init(&server->postgres_queue);
+    queue_init(&server->request_queue);
     char *postgres_conninfo = getenv("WEBSERVER_POSTGRES_CONNINFO"); // char *getenv(const char *name)
     if (!postgres_conninfo) postgres_conninfo = "postgresql://localhost?application_name=webserver";
     char *webserver_postgres_count = getenv("WEBSERVER_POSTGRES_COUNT"); // char *getenv(const char *name);
@@ -15,7 +16,7 @@ int postgres_queue(uv_loop_t *loop) {
         postgres_t *postgres = (postgres_t *)malloc(sizeof(postgres_t));
         if (!postgres) { ERROR("malloc\n"); continue; }
         postgres->conninfo = postgres_conninfo;
-        queue_init(&postgres->queue);
+        queue_init(&postgres->server_queue);
         if (postgres_connect(loop, postgres)) { ERROR("postgres_connect\n"); free(postgres); continue; }
     }
     return 0;
@@ -104,50 +105,52 @@ void postgres_response(PGresult *result, postgres_t *postgres) {
 
 int postgres_push_postgres(postgres_t *postgres) {
     DEBUG("postgres=%p\n", postgres);
-    queue_remove(&postgres->queue);
+    queue_remove(&postgres->server_queue);
     postgres->request = NULL;
     server_t *server = (server_t *)postgres->poll.loop->data;
-    queue_insert_tail(&server->postgres, &postgres->queue);
+    queue_insert_tail(&server->postgres_queue, &postgres->server_queue);
     return postgres_process(server);
 }
 
 int postgres_push_request(request_t *request) {
     DEBUG("request=%p\n", request);
-    queue_remove(&request->queue);
-//    int error = 0; if ((error = response_write(request, "hi\n", sizeof("hi\n") - 1))) { ERROR("response_write\n"); request_close(request->client); } return error; // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
+    queue_remove(&request->server_queue);
     request->postgres = NULL;
+//    int error = 0; if ((error = response_write(request, "hi\n", sizeof("hi\n") - 1))) { ERROR("response_write\n"); request_close(request->client); } return error; // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
     server_t *server = (server_t *)request->client->tcp.loop->data;
-    queue_insert_tail(&server->request, &request->queue);
+    queue_insert_tail(&server->request_queue, &request->server_queue);
+    queue_insert_tail(&request->client->request_queue, &request->client_queue);
     return postgres_process(server);
 }
 
 int postgres_pop_postgres(postgres_t *postgres) {
     DEBUG("postgres=%p\n", postgres);
-    queue_remove(&postgres->queue);
+    queue_remove(&postgres->server_queue);
     if (postgres->request) return postgres_push_request(postgres->request);
     return 0;
 }
 
 int postgres_pop_request(request_t *request) {
     DEBUG("request=%p\n", request);
-    queue_remove(&request->queue);
+    queue_remove(&request->server_queue);
     if (request->postgres) return postgres_push_postgres(request->postgres);
     return 0;
 }
 
 int postgres_process(server_t *server) {
-    DEBUG("queue_empty(&server->postgres)=%i, queue_empty(&server->request)=%i\n", queue_empty(&server->postgres), queue_empty(&server->request));
+    DEBUG("queue_empty(&server->postgres_queue)=%i, queue_empty(&server->request_queue)=%i\n", queue_empty(&server->postgres_queue), queue_empty(&server->request_queue));
     int error = 0;
-    if (queue_empty(&server->postgres) || queue_empty(&server->request)) return error;
-    queue_t *queue = queue_head(&server->postgres);
-    postgres_t *postgres = queue_data(queue, postgres_t, queue);
+    if (queue_empty(&server->postgres_queue) || queue_empty(&server->request_queue)) return error;
+    queue_t *queue = queue_head(&server->postgres_queue);
+    postgres_t *postgres = queue_data(queue, postgres_t, server_queue);
     if ((error = PQisBusy(postgres->conn))) { ERROR("PQisBusy\n"); return error; }
     if ((error = postgres_pop_postgres(postgres))) { ERROR("postgres_pop_postgres\n"); return error; }
-    queue = queue_head(&server->request);
-    request_t *request = queue_data(queue, request_t, queue);
+    queue = queue_head(&server->request_queue);
+    request_t *request = queue_data(queue, request_t, server_queue);
     if ((error = postgres_pop_request(request))) { ERROR("postgres_pop_request\n"); return error; }
     postgres->request = request;
     request->postgres = postgres;
+    if ((error = response_write(request, "hi\n", sizeof("hi\n") - 1))) { ERROR("response_write\n"); request_close(request->client); } return error; // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
     if ((error = !PQsendQuery(postgres->conn, "select to_json(now());"))) { ERROR("PQsendQuery:%s\n", PQerrorMessage(postgres->conn)); return error; } // int PQsendQuery(PGconn *conn, const char *command); char *PQerrorMessage(const PGconn *conn)
     if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { ERROR("uv_poll_start\n"); return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
     return error;

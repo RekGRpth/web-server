@@ -1,5 +1,5 @@
+#include <string.h> // memset, NULL
 #include "http_parser.h"
-#include <string.h>
 
 #define CALL(FOR) { if (FOR##_mark) { if (settings->on_##FOR) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; } }
 #define MARK(FOR) { if (!FOR##_mark) { FOR##_mark = p; } }

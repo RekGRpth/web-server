@@ -3,7 +3,7 @@
 
 #include <postgresql/libpq-fe.h> // PQ*, PG*
 #include <uv.h> // uv_*
-#include "queue.h"
+#include "queue.h" // queue_*
 
 #ifdef RAGEL_HTTP_PARSER
 #   include "ragel-http-parser/http_parser.h"
@@ -15,43 +15,32 @@ typedef struct server_t server_t;
 typedef struct client_t client_t;
 typedef struct postgres_t postgres_t;
 typedef struct request_t request_t;
-typedef struct response_t response_t;
 
 typedef struct server_t {
-    queue_t postgres;
-//    queue_t client;
-    queue_t request;
+    queue_t postgres_queue;
+    queue_t request_queue;
 } server_t;
 
 typedef struct client_t {
-    queue_t request;
-//    queue_t queue;
-//    int queued;
+    queue_t request_queue;
     uv_tcp_t tcp;
     http_parser parser;
-//    postgres_t *postgres;
-//    char t[1024 * 1024 * 10];
 } client_t;
 
 typedef struct postgres_t {
-    queue_t queue;
-//    int queued;
+    queue_t server_queue;
     uv_poll_t poll;
     PGconn *conn;
     char *conninfo;
-//    client_t *client;
     request_t *request;
 } postgres_t;
 
 typedef struct request_t {
-    queue_t queue;
+    queue_t server_queue;
+    queue_t client_queue;
     client_t *client;
     postgres_t *postgres;
     uv_write_t req;
 } request_t;
-
-/*typedef struct response_t {
-    uv_write_t req;
-} response_t;*/
 
 #endif // _CONTEXT_H

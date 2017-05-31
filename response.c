@@ -1,4 +1,5 @@
 #include "response.h"
+#include "macros.h"
 
 #define HEADERS \
     "Content-Type: application/json\r\n" \
@@ -6,7 +7,7 @@
     "Connection: keep-alive\r\n"
 
 int response_write(request_t *request, char *value, int length) {
-    DEBUG("request=%p, value(%i)=%.*s\n", request, length, length, value);
+//    DEBUG("request=%p, value(%i)=%.*s\n", request, length, length, value);
     int error = 0;
     uv_stream_t *stream = (uv_stream_t *)&request->client->tcp;
 //    if (stream->type != UV_TCP) { ERROR("stream->type=%i\n", stream->type); request_close(request->client); return -1; }

@@ -1,5 +1,6 @@
 #include <stdlib.h> // malloc, free
 #include "parser.h"
+#include "macros.h"
 
 static const http_parser_settings parser_settings = {
     .on_message_begin = parser_on_message_begin, // http_cb
@@ -97,14 +98,15 @@ int parser_on_body(http_parser *parser, const char *at, size_t length) { // type
 
 int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
     int error = 0;
-    DEBUG("\n");
+//    DEBUG("\n");
 //    DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
 //    DEBUG("content_length=%li\n", parser->content_length);
     request_t *request = (request_t *)malloc(sizeof(request_t));
     if (!request) { ERROR("malloc\n"); return -1; }
     client_t *client = (client_t *)parser->data;
     request->client = client;
-    queue_init(&request->queue);
+    queue_init(&request->server_queue);
+    queue_init(&request->client_queue);
     if ((error = postgres_push_request(request))) { ERROR("postgres_push_request\n"); return error; }
     return error;
 }
