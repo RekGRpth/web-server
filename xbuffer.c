@@ -15,7 +15,9 @@ void xbuf_free(xbuf_t *xbuf) {
 
 xbuf_t *xbuf_new() {
     xbuf_t *xbuf = (xbuf_t *)malloc(sizeof(xbuf_t));
+//    xbuf_t *xbuf = (xbuf_t *)calloc(1, sizeof(xbuf_t));
     if (xbuf) return xbuf_init(xbuf);
+//    ERROR("calloc\n");
     ERROR("malloc\n");
     return NULL;
 }

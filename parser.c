@@ -1,14 +1,5 @@
-#include <stdlib.h>
-#include <uv.h>
-#include "context.h"
-#include "macros.h"
+#include <stdlib.h> // malloc, free
 #include "parser.h"
-
-#ifdef RAGEL_HTTP_PARSER
-#   include "ragel-http-parser/http_parser.h"
-#else
-#   include "nodejs-http-parser/http_parser.h"
-#endif
 
 static const http_parser_settings parser_settings = {
     .on_message_begin = parser_on_message_begin, // http_cb
@@ -47,8 +38,8 @@ size_t parser_execute(client_t *client, const char *data, size_t len) {
 
 void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
     client_t *client = (client_t *)handle->data;
-    client->parser.data = client;
     parser_init(client);
+    client->parser.data = client;
 //    suggested_size = 8;
 //    suggested_size = 16;
 //    suggested_size = 128;
@@ -59,19 +50,14 @@ void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) 
 
 void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
 //    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
-//    DEBUG("value=%.*s\n", (int)length, at);
     client_t *client = (client_t *)stream->data;
-    if (nread == UV_EOF) { /*ERROR("nread=UV_EOF\n"); */if (!should_keep_alive(client)) parser_close(client); }
-    else if (nread < 0) { ERROR("nread=%li\n", nread); parser_close(client); }
+    if (nread == UV_EOF) { ERROR("client=%p, nread=UV_EOF(%li)\n", client, nread); if (!should_keep_alive(client)) request_close(client); }
+    else if (nread < 0) { ERROR("client=%p, nread=%li\n", client, nread); request_close(client); }
     else if ((ssize_t)parser_execute(client, buf->base, nread) < nread) {
         ERROR("parser_execute(%i)%s\n", HTTP_PARSER_ERRNO(&client->parser), http_errno_description(HTTP_PARSER_ERRNO(&client->parser)));
-        parser_close(client);
+        request_close(client);
     }
-    free(buf->base);
-}
-
-void parser_close(client_t *client) {
-    request_close((uv_handle_t *)&client->tcp);
+    if (buf->base) free(buf->base);
 }
 
 int parser_on_message_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
@@ -110,12 +96,17 @@ int parser_on_body(http_parser *parser, const char *at, size_t length) { // type
 }
 
 int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-//    DEBUG("\n");
+    int error = 0;
+    DEBUG("\n");
 //    DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
 //    DEBUG("content_length=%li\n", parser->content_length);
+    request_t *request = (request_t *)malloc(sizeof(request_t));
+    if (!request) { ERROR("malloc\n"); return -1; }
     client_t *client = (client_t *)parser->data;
-    if (postgres_client(client)) { ERROR("postgres_client\n"); return errno; }
-    return 0;
+    request->client = client;
+    queue_init(&request->queue);
+    if ((error = postgres_push_request(request))) { ERROR("postgres_push_request\n"); return error; }
+    return error;
 }
 
 int parser_on_chunk_header(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
