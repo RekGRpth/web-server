@@ -28,6 +28,7 @@ typedef struct client_t {
     queue_t server_queue;
     uv_tcp_t tcp;
     http_parser parser;
+//    char t[1024*1024*256];
 } client_t;
 
 typedef struct postgres_t {
@@ -43,6 +44,7 @@ typedef struct request_t {
     queue_t client_queue;
     client_t *client;
     postgres_t *postgres;
+//    unsigned t[1024*1024];
 } request_t;
 
 typedef struct response_t {

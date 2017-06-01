@@ -25,13 +25,11 @@ static const http_parser_settings parser_settings = {
 #endif
 };
 
-int parser_init(client_t *client) {
-    int error = 0;
-    request_t *request = request_init(client);
-    if ((error = !request)) { ERROR("request_init\n"); return error; }
+void parser_init(client_t *client) {
+//    request_t *request = (request_t *)client->parser.data;
+//    if (request) request_free(request);
+    client->parser.data = (void *)client;
     http_parser_init(&client->parser, HTTP_REQUEST); // void http_parser_init(http_parser *parser, enum http_parser_type type);
-    client->parser.data = (void *)request;
-    return error;
 }
 
 int should_keep_alive(client_t *client) {
@@ -44,7 +42,7 @@ size_t parser_execute(client_t *client, const char *data, size_t len) {
 
 void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
     client_t *client = (client_t *)handle->data;
-    if (parser_init(client)) { ERROR("parser_init\n"); return; }
+    parser_init(client);
 //    suggested_size = 8;
 //    suggested_size = 16;
 //    suggested_size = 128;
@@ -65,8 +63,14 @@ void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { /
 }
 
 int parser_on_message_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
+    int error = 0;
 //    DEBUG("\n");
-    return 0;
+    client_t *client = (client_t *)parser->data;
+//    parser->data = (void *)NULL;
+    request_t *request = request_init(client);
+    if ((error = !request)) { ERROR("request_init\n"); return error; }
+    parser->data = (void *)request;
+    return error;
 }
 
 int parser_on_url(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);

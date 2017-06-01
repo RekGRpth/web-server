@@ -7,7 +7,7 @@
 void request_close(client_t *client);
 
 // from parser.c
-int parser_init(client_t *client);
+void parser_init(client_t *client);
 int should_keep_alive(client_t *client);
 
 // to response.c

@@ -107,9 +107,9 @@ void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_
         for (PGnotify *notify; (notify = PQnotifies(postgres->conn)); PQfreemem(notify)) { // PGnotify *PQnotifies(PGconn *conn); void PQfreemem(void *ptr)
             DEBUG("Asynchronous notification \"%s\" with payload \"%s\" received from server process with PID %d.\n", notify->relname, notify->extra, notify->be_pid);
         }
-        server_t *server = (server_t *)postgres->poll.loop->data;
+//        server_t *server = (server_t *)postgres->poll.loop->data;
 //        DEBUG("queue_empty(&server->postgres_queue)=%i, queue_empty(&server->request_queue)=%i\n", queue_empty(&server->postgres_queue), queue_empty(&server->request_queue));
-        DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->request_queue));
+//        DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->request_queue));
         if (postgres_push_postgres(postgres)) ERROR("postgres_push_postgres\n");
 //        server_t *server = (server_t *)postgres->poll.loop->data;
 //        DEBUG("queue_empty(&server->postgres_queue)=%i, queue_empty(&server->request_queue)=%i\n", queue_empty(&server->postgres_queue), queue_empty(&server->request_queue));
@@ -129,13 +129,13 @@ void postgres_response(PGresult *result, postgres_t *postgres) {
 //    if (!uv_has_ref((const uv_handle_t *)&postgres->request->client->tcp)) { ERROR("uv_has_ref\n"); ERROR("postgres->request=%p\n", postgres->request); return; } // int uv_has_ref(const uv_handle_t* handle)
     client_t *client = request->client;
     if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); ERROR("postgres->request=%p\n", postgres->request); request_free(request); return; } // int uv_is_closing(const uv_handle_t* handle)
-    DEBUG("postgres->request=%p\n", postgres->request);
+//    DEBUG("postgres->request=%p\n", postgres->request);
     request_free(request);
     if (response_write(client, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) { ERROR("response_write\n"); request_close(client); } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
 }
 
 int postgres_push_postgres(postgres_t *postgres) {
-    DEBUG("postgres=%p\n", postgres);
+//    DEBUG("postgres=%p\n", postgres);
     int error = 0;
     if ((error = PQisBusy(postgres->conn))) { ERROR("PQisBusy\n"); return error; }
     queue_remove(&postgres->server_queue);
@@ -146,7 +146,7 @@ int postgres_push_postgres(postgres_t *postgres) {
 }
 
 int postgres_pop_postgres(postgres_t *postgres) {
-    DEBUG("postgres=%p\n", postgres);
+//    DEBUG("postgres=%p\n", postgres);
     int error = 0;
     if ((error = PQisBusy(postgres->conn))) { ERROR("PQisBusy\n"); return error; }
     queue_remove(&postgres->server_queue);
@@ -155,7 +155,7 @@ int postgres_pop_postgres(postgres_t *postgres) {
 }
 
 int postgres_push_request(request_t *request) {
-    DEBUG("request=%p\n", request);
+//    DEBUG("request=%p\n", request);
     int error = 0;
     client_t *client = request->client;
     queue_remove(&request->server_queue);
@@ -170,7 +170,7 @@ int postgres_push_request(request_t *request) {
 }
 
 int postgres_pop_request(request_t *request) {
-    DEBUG("request=%p\n", request);
+//    DEBUG("request=%p\n", request);
     int error = 0;
     client_t *client = request->client;
     queue_remove(&request->server_queue);
@@ -182,7 +182,7 @@ int postgres_pop_request(request_t *request) {
 
 int postgres_process(server_t *server) {
 //    DEBUG("queue_empty(&server->postgres_queue)=%i, queue_empty(&server->request_queue)=%i\n", queue_empty(&server->postgres_queue), queue_empty(&server->request_queue));
-    DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->request_queue));
+//    DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->request_queue));
     int error = 0;
     if (queue_empty(&server->postgres_queue) || queue_empty(&server->request_queue)) return error;
     queue_t *queue = queue_head(&server->request_queue);
