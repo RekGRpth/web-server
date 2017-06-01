@@ -11,7 +11,6 @@ int response_write(client_t *client, char *value, int length) {
 //    DEBUG("client=%p, value(%i)=%.*s\n", client, length, length, value);
     int error = 0;
     uv_stream_t *stream = (uv_stream_t *)&client->tcp;
-//    if (stream->type != UV_TCP) { ERROR("stream->type=%i\n", stream->type); request_close(client); return -1; }
     if ((error = uv_is_closing((const uv_handle_t *)stream))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
     int headers_length = sizeof(HEADERS) - 1;
     for (int number = length; number /= 10; headers_length++);
@@ -33,7 +32,7 @@ void response_on_write(uv_write_t *req, int status) { // void (*uv_write_cb)(uv_
     response_t *response = (response_t *)req->data;
     if (status) ERROR("status=%i\n", status);
     client_t *client = (client_t *)req->handle->data;
-    if (!should_keep_alive(client)) request_close(client); else parser_init(client);
+    if (!parser_should_keep_alive(client)) request_close(client); else parser_init(client);
     response_free(response);
 }
 

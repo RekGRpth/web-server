@@ -9,7 +9,7 @@ void request_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
     server_t *server = request_server_init(&loop);
     if (!server) { ERROR("request_server_init\n"); return; }
     loop.data = (void *)server;
-    if (postgres_queue(&loop)) { ERROR("postgres_queue\n"); request_server_free(server); return; }
+    postgres_queue(&loop);
     uv_tcp_t tcp;
     if (uv_tcp_init(&loop, &tcp)) { ERROR("uv_tcp_init\n"); request_server_free(server); return; } // int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle)
     uv_os_sock_t client_sock = *((uv_os_sock_t *)arg);
@@ -53,7 +53,6 @@ client_t *request_client_init(uv_stream_t *server) {
     queue_init(&client->server_queue);
     if (uv_tcp_init(server->loop, &client->tcp)) { ERROR("uv_tcp_init\n"); request_client_free(client); return NULL; } // int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle)
     client->tcp.data = (void *)client;
-    client->parser.data = (void *)NULL;
     return client;
 }
 
@@ -83,8 +82,6 @@ request_t *request_init(client_t *client) {
     request->client = client;
     queue_init(&request->server_queue);
     queue_init(&request->client_queue);
-//    for (size_t i = 0; i < sizeof(request->t) / sizeof(request->t[0]); i++) request->t[i] = i;
-//    DEBUG("request=%p, sizeof(request)=%li\n", request, sizeof(request_t));
     return request;
 }
 

@@ -26,13 +26,11 @@ static const http_parser_settings parser_settings = {
 };
 
 void parser_init(client_t *client) {
-//    request_t *request = (request_t *)client->parser.data;
-//    if (request) request_free(request);
     client->parser.data = (void *)client;
     http_parser_init(&client->parser, HTTP_REQUEST); // void http_parser_init(http_parser *parser, enum http_parser_type type);
 }
 
-int should_keep_alive(client_t *client) {
+int parser_should_keep_alive(client_t *client) {
     return http_should_keep_alive(&client->parser); // int http_should_keep_alive(const http_parser *parser);
 }
 
@@ -53,7 +51,7 @@ void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) 
 void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
 //    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
     client_t *client = (client_t *)stream->data;
-    if (nread == UV_EOF) { /*ERROR("client=%p, nread=UV_EOF(%li)\n", client, nread); */if (!should_keep_alive(client)) request_close(client); }
+    if (nread == UV_EOF) { /*ERROR("client=%p, nread=UV_EOF(%li)\n", client, nread); */if (!parser_should_keep_alive(client)) request_close(client); }
     else if (nread < 0) { /*ERROR("client=%p, nread=%li\n", client, nread); */request_close(client); }
     else if ((ssize_t)parser_execute(client, buf->base, nread) < nread) {
         ERROR("parser_execute(%i)%s\n", HTTP_PARSER_ERRNO(&client->parser), http_errno_description(HTTP_PARSER_ERRNO(&client->parser)));
@@ -63,10 +61,9 @@ void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { /
 }
 
 int parser_on_message_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    int error = 0;
 //    DEBUG("\n");
+    int error = 0;
     client_t *client = (client_t *)parser->data;
-//    parser->data = (void *)NULL;
     request_t *request = request_init(client);
     if ((error = !request)) { ERROR("request_init\n"); return error; }
     parser->data = (void *)request;
@@ -104,10 +101,10 @@ int parser_on_body(http_parser *parser, const char *at, size_t length) { // type
 }
 
 int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-    int error = 0;
 //    DEBUG("\n");
 //    DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
 //    DEBUG("content_length=%li\n", parser->content_length);
+    int error = 0;
     request_t *request = (request_t *)parser->data;
     client_t *client = request->client;
     if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
