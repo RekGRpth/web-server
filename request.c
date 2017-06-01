@@ -34,7 +34,7 @@ server_t *request_server_init(uv_loop_t *loop) {
 void request_server_free(server_t *server) {
     ERROR("server=%p\n", server);
     while (!queue_empty(&server->postgres_queue)) postgres_free(pointer_data(queue_head(&server->postgres_queue), postgres_t, server_pointer));
-    while (!queue_empty(&server->request_queue)) request_free(pointer_data(queue_head(&server->request_queue), request_t, server_pointer));
+//    while (!queue_empty(&server->request_queue)) request_free(pointer_data(queue_head(&server->request_queue), request_t, server_pointer));
     while (!queue_empty(&server->client_queue)) request_client_free(pointer_data(queue_head(&server->client_queue), client_t, server_pointer));
     free(server);
 }
@@ -63,8 +63,7 @@ client_t *request_client_init(uv_stream_t *server) {
 
 void request_client_free(client_t *client) {
 //    DEBUG("client=%p\n", client);
-//    server_t *server = (server_t *)client->tcp.loop->data;
-//    DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
+//    server_t *server = (server_t *)client->tcp.loop->data; DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
     while (!queue_empty(&client->request_queue)) request_free(pointer_data(queue_head(&client->request_queue), request_t, client_pointer));
     pointer_remove(&client->server_pointer);
     free(client);
@@ -97,12 +96,9 @@ request_t *request_init(client_t *client) {
 
 void request_free(request_t *request) {
 //    DEBUG("request=%p, request->postgres=%p\n", request, request->postgres);
-//    client_t *client = request->client;
-//    server_t *server = (server_t *)client->tcp.loop->data;
-//    DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
+//    client_t *client = request->client; server_t *server = (server_t *)client->tcp.loop->data; DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
     pointer_remove(&request->server_pointer);
     pointer_remove(&request->client_pointer);
-//    DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->request_queue));
     if (request->postgres) if (postgres_push_postgres(request->postgres)) ERROR("postgres_push_postgres\n");
     free(request);
 }

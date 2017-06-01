@@ -56,7 +56,7 @@ int postgres_reconnect(postgres_t *postgres) {
     int error = 0;
     if (postgres->conn) PQfinish(postgres->conn); // void PQfinish(PGconn *conn)
     postgres->conn = NULL;
-    if (postgres->request) request_free(postgres->request);
+    if (postgres->request) postgres_push_request(postgres->request);
     postgres->request = NULL;
     if (uv_is_active((uv_handle_t *)&postgres->poll)) if ((error = uv_poll_stop(&postgres->poll))) { ERROR("uv_poll_stop\n"); return error; } // int uv_is_active(const uv_handle_t* handle); int uv_poll_stop(uv_poll_t* poll)
     if ((error = postgres_pop_postgres(postgres))) { ERROR("postgres_pop_postgres\n"); return error; }
@@ -180,11 +180,11 @@ int postgres_push_request(request_t *request) {
     pointer_remove(&request->server_pointer);
     if ((error = client->tcp.type != UV_TCP)) { ERROR("client->tcp.type=%i\n", client->tcp.type); return error; }
     if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
-    pointer_remove(&request->client_pointer);
+pointer_remove(&request->client_pointer);
     request->postgres = NULL;
     server_t *server = (server_t *)client->tcp.loop->data;
     queue_insert_pointer(&server->request_queue, &request->server_pointer);
-    queue_insert_pointer(&client->request_queue, &request->client_pointer);
+queue_insert_pointer(&client->request_queue, &request->client_pointer);
     return postgres_process(server);
 }
 
@@ -195,7 +195,7 @@ int postgres_pop_request(request_t *request) {
     pointer_remove(&request->server_pointer);
     if ((error = client->tcp.type != UV_TCP)) { ERROR("client->tcp.type=%i\n", client->tcp.type); return error; }
     if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
-    pointer_remove(&request->client_pointer);
+pointer_remove(&request->client_pointer);
     request->postgres = NULL;
     return error;
 }

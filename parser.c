@@ -44,8 +44,6 @@ size_t parser_execute(client_t *client, const char *data, size_t len) {
 void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
 //    DEBUG("handle=%p, suggested_size=%li, buf=%p\n", handle, suggested_size, buf);
     client_t *client = (client_t *)handle->data;
-//    server_t *server = (server_t *)client->tcp.loop->data;
-//    queue_insert_pointer(&server->client_queue, &client->server_pointer);
     parser_init(client);
 //    suggested_size = 8;
 //    suggested_size = 16;
