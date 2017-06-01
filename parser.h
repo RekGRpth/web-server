@@ -6,12 +6,14 @@
 // from request.c
 void request_close(client_t *client);
 void request_free(request_t *request);
+request_t *request_init(client_t *client);
 
 // from postgres.c
 int postgres_push_request(request_t *request);
+//int postgres_push_client(client_t *client);
 
 // to parser.c
-void parser_init(client_t *client);
+int parser_init(client_t *client);
 int should_keep_alive(client_t *client);
 size_t parser_execute(client_t *client, const char *data, size_t len);
 void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf); // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )

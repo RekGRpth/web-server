@@ -25,8 +25,13 @@ static const http_parser_settings parser_settings = {
 #endif
 };
 
-void parser_init(client_t *client) {
+int parser_init(client_t *client) {
+    int error = 0;
+    request_t *request = request_init(client);
+    if ((error = !request)) { ERROR("request_init\n"); return error; }
     http_parser_init(&client->parser, HTTP_REQUEST); // void http_parser_init(http_parser *parser, enum http_parser_type type);
+    client->parser.data = (void *)request;
+    return error;
 }
 
 int should_keep_alive(client_t *client) {
@@ -39,14 +44,12 @@ size_t parser_execute(client_t *client, const char *data, size_t len) {
 
 void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
     client_t *client = (client_t *)handle->data;
-    parser_init(client);
-    client->parser.data = client;
+    if (parser_init(client)) { ERROR("parser_init\n"); return; }
 //    suggested_size = 8;
 //    suggested_size = 16;
 //    suggested_size = 128;
     buf->base = (char *)malloc(suggested_size);
-    if (buf->base) buf->len = suggested_size;
-    else ERROR("malloc\n");
+    if (!buf->base) ERROR("malloc\n"); else buf->len = suggested_size;
 }
 
 void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
@@ -101,14 +104,10 @@ int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) 
 //    DEBUG("\n");
 //    DEBUG("http_major=%i, http_minor=%i\n", parser->http_major, parser->http_minor);
 //    DEBUG("content_length=%li\n", parser->content_length);
-    client_t *client = (client_t *)parser->data;
+    request_t *request = (request_t *)parser->data;
+    client_t *client = request->client;
     if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
-    request_t *request = (request_t *)malloc(sizeof(request_t));
-    if (!request) { ERROR("malloc\n"); return -1; }
-    request->client = client;
-    queue_init(&request->server_queue);
-    queue_init(&request->client_queue);
-    if ((error = postgres_push_request(request))) { ERROR("postgres_push_request\n"); request_free(request); return error; }
+    if ((error = postgres_push_request(request))) { ERROR("postgres_push_request\n"); return error; }
     return error;
 }
 

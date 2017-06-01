@@ -20,10 +20,12 @@ typedef struct response_t response_t;
 typedef struct server_t {
     queue_t postgres_queue;
     queue_t request_queue;
+    queue_t client_queue;
 } server_t;
 
 typedef struct client_t {
     queue_t request_queue;
+    queue_t server_queue;
     uv_tcp_t tcp;
     http_parser parser;
 } client_t;
@@ -41,7 +43,6 @@ typedef struct request_t {
     queue_t client_queue;
     client_t *client;
     postgres_t *postgres;
-//    uv_write_t req;
 } request_t;
 
 typedef struct response_t {

@@ -24,12 +24,15 @@ int postgres_reconnect(postgres_t *postgres);
 void postgres_on_timer(uv_timer_t *handle); // void (*uv_timer_cb)(uv_timer_t* handle)
 int postgres_queue(uv_loop_t *loop);
 int postgres_push_postgres(postgres_t *postgres);
-//int postgres_push_client(client_t *client);
 int postgres_pop_postgres(postgres_t *postgres);
-//int postgres_pop_client(client_t *client);
 int postgres_process(server_t *server);
 void postgres_response(PGresult *result, postgres_t *postgres);
 int postgres_push_request(request_t *request);
 int postgres_pop_request(request_t *request);
+//int postgres_push_client(client_t *client);
+postgres_t *postgres_init(uv_loop_t *loop, char *conninfo);
+void postgres_free(postgres_t *postgres);
+uv_timer_t *postgres_timer_init(postgres_t *postgres);
+void postgres_timer_free(uv_timer_t *timer);
 
 #endif // _POSTGRES_H

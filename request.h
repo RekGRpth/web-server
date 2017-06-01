@@ -10,6 +10,7 @@ void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf); //
 // from postgres.c
 int postgres_queue(uv_loop_t *loop);
 int postgres_push_postgres(postgres_t *postgres);
+void postgres_free(postgres_t *postgres);
 
 // to request.c
 void request_on_start(void *arg); // void (*uv_thread_cb)(void* arg)
@@ -17,5 +18,10 @@ void request_on_connect(uv_stream_t *server, int status); // void (*uv_connectio
 void request_close(client_t *client);
 void request_on_close(uv_handle_t *handle); // void (*uv_close_cb)(uv_handle_t* handle)
 void request_free(request_t *request);
+request_t *request_init(client_t *client);
+server_t *request_server_init(uv_loop_t *loop);
+void request_server_free(server_t *server);
+client_t *request_client_init(uv_stream_t *server);
+void request_client_free(client_t *client);
 
 #endif // _REQUEST_H

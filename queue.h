@@ -19,6 +19,8 @@
 #include <stddef.h>
 
 typedef void *queue_t[2];
+int queue_count(queue_t *queue);
+//void queue_remove_and_null(queue_t *queue);
 
 /* Private macros. */
 #define queue_next(q)       (*(queue_t **) &((*(q))[0]))
@@ -102,6 +104,7 @@ typedef void *queue_t[2];
   do {                                                                        \
     queue_prev_next(q) = queue_next(q);                                       \
     queue_next_prev(q) = queue_prev(q);                                       \
+    queue_init(q);                                                            \
   }                                                                           \
   while (0)
 
