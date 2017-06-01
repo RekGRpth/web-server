@@ -26,7 +26,7 @@ typedef struct server_t {
 typedef struct client_t {
     uv_tcp_t tcp;
     http_parser parser;
-    queue_t server_queue;
+    pointer_t server_pointer;
     queue_t request_queue;
 } client_t;
 
@@ -35,14 +35,14 @@ typedef struct postgres_t {
     char *conninfo;
     PGconn *conn;
     request_t *request;
-    queue_t server_queue;
+    pointer_t server_pointer;
 } postgres_t;
 
 typedef struct request_t {
     postgres_t *postgres;
     client_t *client;
-    queue_t server_queue;
-    queue_t client_queue;
+    pointer_t server_pointer;
+    pointer_t client_pointer;
 } request_t;
 
 typedef struct response_t {

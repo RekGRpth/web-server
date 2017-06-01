@@ -1,6 +1,7 @@
 #ifndef _MACROS_H
 #define _MACROS_H
 
+#include <stdio.h> // fprintf, stdout
 #include <string.h> // strerror
 #include <sys/syscall.h> // SYS_gettid
 #include <unistd.h> // syscall

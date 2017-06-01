@@ -32,13 +32,15 @@ server_t *request_server_init(uv_loop_t *loop) {
 }
 
 void request_server_free(server_t *server) {
-    while (!queue_empty(&server->postgres_queue)) postgres_free(queue_data(queue_head(&server->postgres_queue), postgres_t, server_queue));
-    while (!queue_empty(&server->request_queue)) request_free(queue_data(queue_head(&server->request_queue), request_t, server_queue));
-    while (!queue_empty(&server->client_queue)) request_client_free(queue_data(queue_head(&server->client_queue), client_t, server_queue));
+    ERROR("server=%p\n", server);
+    while (!queue_empty(&server->postgres_queue)) postgres_free(pointer_data(queue_head(&server->postgres_queue), postgres_t, server_pointer));
+    while (!queue_empty(&server->request_queue)) request_free(pointer_data(queue_head(&server->request_queue), request_t, server_pointer));
+    while (!queue_empty(&server->client_queue)) request_client_free(pointer_data(queue_head(&server->client_queue), client_t, server_pointer));
     free(server);
 }
 
 void request_on_connect(uv_stream_t *server, int status) { // void (*uv_connection_cb)(uv_stream_t* server, int status)
+//    DEBUG("server=%p, status=%i\n", server, status);
     if (status) { ERROR("status=%i\n", status); return; }
     client_t *client = request_client_init(server);
     if (!client) { ERROR("request_client_init\n"); return; }
@@ -47,25 +49,31 @@ void request_on_connect(uv_stream_t *server, int status) { // void (*uv_connecti
 }
 
 client_t *request_client_init(uv_stream_t *server) {
+//    DEBUG("server=%p\n", server);
     client_t *client = (client_t *)malloc(sizeof(client_t));
     if (!client) { ERROR("malloc\n"); return NULL; }
     queue_init(&client->request_queue);
-    queue_init(&client->server_queue);
+    pointer_init(&client->server_pointer);
     if (uv_tcp_init(server->loop, &client->tcp)) { ERROR("uv_tcp_init\n"); request_client_free(client); return NULL; } // int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle)
     client->tcp.data = (void *)client;
+    server_t *server_ = (server_t *)client->tcp.loop->data;
+    queue_insert_pointer(&server_->client_queue, &client->server_pointer);
     return client;
 }
 
 void request_client_free(client_t *client) {
 //    DEBUG("client=%p\n", client);
-    while (!queue_empty(&client->request_queue)) request_free(queue_data(queue_head(&client->request_queue), request_t, client_queue));
-    queue_remove(&client->server_queue);
+//    server_t *server = (server_t *)client->tcp.loop->data;
+//    DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
+    while (!queue_empty(&client->request_queue)) request_free(pointer_data(queue_head(&client->request_queue), request_t, client_pointer));
+    pointer_remove(&client->server_pointer);
     free(client);
 }
 
 void request_close(client_t *client) {
 //    DEBUG("client=%p\n", client);
     uv_handle_t *handle = (uv_handle_t *)&client->tcp;
+    if (client->tcp.type != UV_TCP) { ERROR("client->tcp.type=%i\n", client->tcp.type); return; }
     if (!uv_is_closing(handle)) uv_close(handle, request_on_close); // int uv_is_closing(const uv_handle_t* handle); void uv_close(uv_handle_t* handle, uv_close_cb close_cb)
 }
 
@@ -76,12 +84,14 @@ void request_on_close(uv_handle_t *handle) { // void (*uv_close_cb)(uv_handle_t*
 }
 
 request_t *request_init(client_t *client) {
+//    DEBUG("client=%p\n", client);
+    if (client->tcp.type != UV_TCP) { ERROR("client->tcp.type=%i\n", client->tcp.type); return NULL; }
     if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); return NULL; } // int uv_is_closing(const uv_handle_t* handle)
     request_t *request = (request_t *)malloc(sizeof(request_t));
     if (!request) { ERROR("malloc\n"); return NULL; }
     request->client = client;
-    queue_init(&request->server_queue);
-    queue_init(&request->client_queue);
+    pointer_init(&request->server_pointer);
+    pointer_init(&request->client_pointer);
     return request;
 }
 
@@ -89,9 +99,9 @@ void request_free(request_t *request) {
 //    DEBUG("request=%p, request->postgres=%p\n", request, request->postgres);
 //    client_t *client = request->client;
 //    server_t *server = (server_t *)client->tcp.loop->data;
-//    DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->request_queue));
-    queue_remove(&request->server_queue);
-    queue_remove(&request->client_queue);
+//    DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
+    pointer_remove(&request->server_pointer);
+    pointer_remove(&request->client_pointer);
 //    DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->request_queue));
     if (request->postgres) if (postgres_push_postgres(request->postgres)) ERROR("postgres_push_postgres\n");
     free(request);

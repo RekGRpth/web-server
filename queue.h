@@ -20,7 +20,12 @@
 
 typedef void *queue_t[2];
 int queue_count(queue_t *queue);
-//void queue_remove_and_null(queue_t *queue);
+
+#define pointer_t queue_t
+#define pointer_remove queue_remove
+#define queue_insert_pointer queue_insert_tail
+#define pointer_init queue_init
+#define pointer_data queue_data
 
 /* Private macros. */
 #define queue_next(q)       (*(queue_t **) &((*(q))[0]))
