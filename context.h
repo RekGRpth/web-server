@@ -1,9 +1,11 @@
 #ifndef _CONTEXT_H
 #define _CONTEXT_H
 
+#include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
 #include <postgresql/libpq-fe.h> // PQ*, PG*
 #include <uv.h> // uv_*
 #include "queue.h" // queue_*
+#include "macros.h" // DEBUG, ERROR
 
 #ifdef RAGEL_HTTP_PARSER
 #   include "ragel-http-parser/http_parser.h"

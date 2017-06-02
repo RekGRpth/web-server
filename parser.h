@@ -3,15 +3,6 @@
 
 #include "context.h"
 
-// from request.c
-void request_close(client_t *client);
-void request_free(request_t *request);
-request_t *request_init(client_t *client);
-
-// from postgres.c
-int postgres_push_request(request_t *request);
-
-// to parser.c
 void parser_init(client_t *client);
 int parser_should_keep_alive(client_t *client);
 size_t parser_execute(client_t *client, const char *data, size_t len);

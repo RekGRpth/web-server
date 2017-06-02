@@ -1,6 +1,6 @@
-#include <stdlib.h> // malloc, free
 #include "parser.h"
-#include "macros.h"
+#include "postgres.h"
+#include "request.h"
 
 static const http_parser_settings parser_settings = {
     .on_message_begin = parser_on_message_begin, // http_cb
@@ -39,29 +39,6 @@ int parser_should_keep_alive(client_t *client) {
 size_t parser_execute(client_t *client, const char *data, size_t len) {
 //    DEBUG("client=%p\n", client);
     return http_parser_execute(&client->parser, (const http_parser_settings *)&parser_settings, data, len);// size_t http_parser_execute(http_parser *parser, const http_parser_settings *settings, const char *data, size_t len);
-}
-
-void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
-//    DEBUG("handle=%p, suggested_size=%li, buf=%p\n", handle, suggested_size, buf);
-    client_t *client = (client_t *)handle->data;
-    parser_init(client);
-//    suggested_size = 8;
-//    suggested_size = 16;
-//    suggested_size = 128;
-    buf->base = (char *)malloc(suggested_size);
-    if (!buf->base) ERROR("malloc\n"); else buf->len = suggested_size;
-}
-
-void parser_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
-//    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
-    client_t *client = (client_t *)stream->data;
-    if (nread == UV_EOF) { /*ERROR("client=%p, nread=UV_EOF(%li)\n", client, nread); */if (!parser_should_keep_alive(client)) request_close(client); }
-    else if (nread < 0) { /*ERROR("client=%p, nread=%li\n", client, nread); */request_close(client); }
-    else if ((ssize_t)parser_execute(client, buf->base, nread) < nread) {
-        ERROR("parser_execute(%i)%s\n", HTTP_PARSER_ERRNO(&client->parser), http_errno_description(HTTP_PARSER_ERRNO(&client->parser)));
-        request_close(client);
-    }
-    if (buf->base) free(buf->base);
 }
 
 int parser_on_message_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
