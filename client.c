@@ -35,8 +35,8 @@ void client_free(client_t *client) {
 
 void client_close(client_t *client) {
     DEBUG("client=%p\n", client);
-    uv_handle_t *handle = (uv_handle_t *)&client->tcp;
     if (client->tcp.type != UV_TCP) { ERROR("client->tcp.type=%i\n", client->tcp.type); return; }
+    uv_handle_t *handle = (uv_handle_t *)&client->tcp;
     if (!uv_is_closing(handle)) uv_close(handle, client_on_close); // int uv_is_closing(const uv_handle_t* handle); void uv_close(uv_handle_t* handle, uv_close_cb close_cb)
 }
 
@@ -47,20 +47,21 @@ void client_on_close(uv_handle_t *handle) { // void (*uv_close_cb)(uv_handle_t* 
 }
 
 void client_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
-//    DEBUG("handle=%p, suggested_size=%li, buf=%p\n", handle, suggested_size, buf);
-    client_t *client = (client_t *)handle->data;
-    parser_init(client);
+    DEBUG("handle=%p, suggested_size=%li, buf=%p\n", handle, suggested_size, buf);
 //    suggested_size = 8;
 //    suggested_size = 16;
 //    suggested_size = 128;
     buf->base = (char *)malloc(suggested_size);
-    if (!buf->base) ERROR("malloc\n"); else buf->len = suggested_size;
+    client_t *client = (client_t *)handle->data;
+    if (!buf->base) { ERROR("malloc\n"); client_close(client); return; }
+    parser_init(client);
+    buf->len = suggested_size;
 }
 
 void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
 //    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
     client_t *client = (client_t *)stream->data;
-    if (nread == UV_EOF) { /*ERROR("client=%p, nread=UV_EOF(%li)\n", client, nread); */if (!parser_should_keep_alive(client)) client_close(client); }
+    if (nread == UV_EOF) { /*ERROR("client=%p, nread=UV_EOF(%li)\n", client, nread); */parser_init_or_client_close(client); }
     else if (nread < 0) { /*ERROR("client=%p, nread=%li\n", client, nread); */client_close(client); }
     else if ((ssize_t)parser_execute(client, buf->base, nread) < nread) { ERROR("parser_execute\n"); client_close(client); }
     if (buf->base) free(buf->base);

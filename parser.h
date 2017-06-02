@@ -4,6 +4,7 @@
 #include "context.h"
 
 void parser_init(client_t *client);
+void parser_init_or_client_close(client_t *client);
 int parser_should_keep_alive(client_t *client);
 size_t parser_execute(client_t *client, const char *data, size_t len);
 void parser_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf); // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )

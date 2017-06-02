@@ -1,5 +1,4 @@
 #include "response.h"
-#include "client.h"
 #include "parser.h"
 
 #define HEADERS \
@@ -32,7 +31,7 @@ void response_on_write(uv_write_t *req, int status) { // void (*uv_write_cb)(uv_
     DEBUG("req=%p, status=%i\n", req, status);
     if (status) ERROR("status=%i\n", status);
     client_t *client = (client_t *)req->handle->data;
-    if (!parser_should_keep_alive(client)) client_close(client); else parser_init(client);
+    parser_init_or_client_close(client);
     response_t *response = (response_t *)req->data;
     response_free(response);
 }

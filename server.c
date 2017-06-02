@@ -27,7 +27,7 @@ server_t *server_init(uv_loop_t *loop) {
     queue_init(&server->request_queue);
     queue_init(&server->client_queue);
     loop->data = (void *)server;
-    postgres_queue(loop);
+    server_postgres(loop);
     return server;
 }
 
@@ -37,4 +37,15 @@ void server_free(server_t *server) {
     while (!queue_empty(&server->client_queue)) client_free(pointer_data(queue_head(&server->client_queue), client_t, server_pointer));
     while (!queue_empty(&server->request_queue)) request_free(pointer_data(queue_head(&server->request_queue), request_t, server_pointer));
     free(server);
+}
+
+void server_postgres(uv_loop_t *loop) {
+    DEBUG("loop=%p\n", loop);
+    char *conninfo = getenv("WEBSERVER_POSTGRES_CONNINFO"); // char *getenv(const char *name)
+    if (!conninfo) conninfo = "postgresql://localhost?application_name=webserver";
+    char *webserver_postgres_count = getenv("WEBSERVER_POSTGRES_COUNT"); // char *getenv(const char *name);
+    int count = 1;
+    if (webserver_postgres_count) count = atoi(webserver_postgres_count);
+    if (count < 1) count = 1;
+    for (int i = 0; i < count; i++) if (!postgres_init_and_connect(loop, conninfo)) ERROR("postgres_init_and_connect\n");
 }
