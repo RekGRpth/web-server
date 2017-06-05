@@ -4,6 +4,7 @@
 request_t *request_init(client_t *client) {
     DEBUG("client=%p\n", client);
     if (client->tcp.type != UV_TCP) { ERROR("client->tcp.type=%i\n", client->tcp.type); return NULL; }
+    if (client->tcp.flags > MAX_FLAG) { ERROR("client->tcp.flags=%u\n", client->tcp.flags); return NULL; }
     if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); return NULL; } // int uv_is_closing(const uv_handle_t* handle)
     request_t *request = (request_t *)malloc(sizeof(request_t));
     if (!request) { ERROR("malloc\n"); return NULL; }
