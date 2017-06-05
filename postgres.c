@@ -16,6 +16,7 @@ postgres_t *postgres_init_and_connect(uv_loop_t *loop, char *conninfo) {
 void postgres_free(postgres_t *postgres) {
     DEBUG("postgres=%p\n", postgres);
     pointer_remove(&postgres->server_pointer);
+    PQfinish(postgres->conn);
     free(postgres);
 }
 
@@ -30,7 +31,6 @@ int postgres_connect(uv_loop_t *loop, postgres_t *postgres) {
     if ((error = postgres_sock < 0)) { ERROR("PQsocket\n"); PQfinish(postgres->conn); return error; }
     if ((error = uv_poll_init_socket(loop, &postgres->poll, postgres_sock))) { ERROR("uv_poll_init_socket\n"); PQfinish(postgres->conn); return error; } // int uv_poll_init_socket(uv_loop_t* loop, uv_poll_t* handle, uv_os_sock_t socket)
     postgres->poll.data = (void *)postgres;
-    postgres->postgres_poll = PQconnectPoll; // PostgresPollingStatusType PQconnectPoll(PGconn *conn)
     if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { ERROR("uv_poll_start\n"); PQfinish(postgres->conn); return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
     return error;
 }
@@ -41,9 +41,9 @@ void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_
     if (status) { ERROR("status=%i\n", status); postgres_reset(postgres); return; }
     if (PQsocket(postgres->conn) < 0) { ERROR("PQsocket\n"); postgres_reset(postgres); return; } // int PQsocket(const PGconn *conn)
     switch (PQstatus(postgres->conn)) { // ConnStatusType PQstatus(const PGconn *conn)
-        case CONNECTION_OK: break;
+        case CONNECTION_OK: DEBUG("CONNECTION_OK\n"); break;
         case CONNECTION_BAD: ERROR("PQstatus==CONNECTION_BAD %s\n", PQerrorMessage(postgres->conn)); postgres_reset(postgres); return; // char *PQerrorMessage(const PGconn *conn)
-        default: switch (postgres->postgres_poll(postgres->conn)) { // PostgresPollingStatusType PQconnectPoll(PGconn *conn)
+        default: switch (PQconnectPoll(postgres->conn)) { // PostgresPollingStatusType PQconnectPoll(PGconn *conn)
             case PGRES_POLLING_FAILED: ERROR("PGRES_POLLING_FAILED\n"); postgres_reset(postgres); return;
             case PGRES_POLLING_READING: if (uv_poll_start(&postgres->poll, UV_READABLE, postgres_on_poll)) ERROR("uv_poll_start\n"); return; // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
             case PGRES_POLLING_WRITING: if (uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll)) ERROR("uv_poll_start\n"); return; // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
@@ -52,11 +52,7 @@ void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_
         }
     }
     if (events & UV_READABLE) {
-        if (!PQconsumeInput(postgres->conn)) { // int PQconsumeInput(PGconn *conn);
-            ERROR("PQconsumeInput:%s\n", PQerrorMessage(postgres->conn)); // char *PQerrorMessage(const PGconn *conn)
-            if (postgres_socket(postgres)) ERROR("postgres_socket\n");
-            return;
-        }
+        if (!PQconsumeInput(postgres->conn)) { ERROR("PQconsumeInput:%s\n", PQerrorMessage(postgres->conn)); postgres_reset(postgres); return; } // int PQconsumeInput(PGconn *conn); char *PQerrorMessage(const PGconn *conn)
         if (PQisBusy(postgres->conn)) return; // int PQisBusy(PGconn *conn)
         for (PGresult *result; (result = PQgetResult(postgres->conn)); PQclear(result)) switch (PQresultStatus(result)) { // PGresult *PQgetResult(PGconn *conn); void PQclear(PGresult *res); ExecStatusType PQresultStatus(const PGresult *res)
             case PGRES_TUPLES_OK: postgres_response(result, postgres); break;
@@ -66,16 +62,17 @@ void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_
         for (PGnotify *notify; (notify = PQnotifies(postgres->conn)); PQfreemem(notify)) { // PGnotify *PQnotifies(PGconn *conn); void PQfreemem(void *ptr)
             DEBUG("Asynchronous notification \"%s\" with payload \"%s\" received from server process with PID %d.\n", notify->relname, notify->extra, notify->be_pid);
         }
-        if (postgres_push_postgres(postgres)) ERROR("postgres_push_postgres\n");
+        DEBUG("postgres_push_postgres\n"); if (postgres_push_postgres(postgres)) ERROR("postgres_push_postgres\n");
     }
     if (events & UV_WRITABLE) switch (PQflush(postgres->conn)) { // int PQflush(PGconn *conn);
-        case 0: /*DEBUG("No data left to send\n"); */if (uv_poll_start(&postgres->poll, UV_READABLE, postgres_on_poll)) ERROR("uv_poll_start\n"); break; // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
-        case 1: /*DEBUG("More data left to send\n"); */break;
+        case 0: DEBUG("No data left to send\n"); if (uv_poll_start(&postgres->poll, UV_READABLE, postgres_on_poll)) ERROR("uv_poll_start\n"); break; // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
+        case 1: DEBUG("More data left to send\n"); break;
         default: ERROR("error sending query\n"); break;
     }
 }
 
 void postgres_listen(postgres_t *postgres) {
+    DEBUG("postgres=%p\n", postgres);
     if (!PQisnonblocking(postgres->conn) && PQsetnonblocking(postgres->conn, 1)) ERROR("PQsetnonblocking:%s\n", PQerrorMessage(postgres->conn)); // int PQisnonblocking(const PGconn *conn); int PQsetnonblocking(PGconn *conn, int arg); char *PQerrorMessage(const PGconn *conn)
     if (!PQsendQuery(postgres->conn, "listen \"webserver\";")) { ERROR("PQsendQuery:%s\n", PQerrorMessage(postgres->conn)); return; }// int PQsendQuery(PGconn *conn, const char *command); char *PQerrorMessage(const PGconn *conn)
     if (uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll)) { ERROR("uv_poll_start\n"); return; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
@@ -90,15 +87,14 @@ int postgres_socket(postgres_t *postgres) {
 }
 
 int postgres_reset(postgres_t *postgres) {
-    ERROR("postgres=%p, postgres->request=%p\n", postgres, postgres->request);
+    DEBUG("postgres=%p, postgres->request=%p\n", postgres, postgres->request);
     int error = 0;
     if (uv_is_active((uv_handle_t *)&postgres->poll)) if ((error = uv_poll_stop(&postgres->poll))) { ERROR("uv_poll_stop\n"); return error; } // int uv_is_active(const uv_handle_t* handle); int uv_poll_stop(uv_poll_t* poll)
     if (postgres->request) postgres_push_request(postgres->request);
     postgres->request = NULL;
     pointer_remove(&postgres->server_pointer);
-    if ((error = !PQresetStart(postgres->conn))) { ERROR("PQresetStart\n"); return error; } // int PQresetStart(PGconn *conn);
-    postgres->postgres_poll = PQresetPoll; // PostgresPollingStatusType PQresetPoll(PGconn *conn)
-    if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { ERROR("uv_poll_start\n"); return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
+    PQfinish(postgres->conn);
+    if ((error = postgres_connect(postgres->poll.loop, postgres))) { ERROR("postgres_connect\n"); postgres_reset(postgres); return error; }
     return error;
 }
 
@@ -115,7 +111,7 @@ void postgres_response(PGresult *result, postgres_t *postgres) {
     if (client->tcp.type != UV_TCP) { ERROR("client->tcp.type=%i\n", client->tcp.type); return; }
     if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); return; } // int uv_is_closing(const uv_handle_t* handle)
     request_free(request);
-    if (response_write(client, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) { ERROR("response_write\n"); client_close(client); } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
+    if (response_write(client, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) { ERROR("response_write\n"); client_close(client); return; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
 }
 
 int postgres_push_postgres(postgres_t *postgres) {
@@ -126,7 +122,7 @@ int postgres_push_postgres(postgres_t *postgres) {
     pointer_remove(&postgres->server_pointer);
     postgres->request = NULL;
     server_t *server = (server_t *)postgres->poll.loop->data;
-    queue_insert_pointer(&server->postgres_queue, &postgres->server_pointer);
+    queue_put_pointer(&server->postgres_queue, &postgres->server_pointer);
     return postgres_process(server);
 }
 
@@ -149,8 +145,8 @@ int postgres_push_request(request_t *request) {
     pointer_remove(&request->client_pointer);
     request->postgres = NULL;
     server_t *server = (server_t *)client->tcp.loop->data;
-    queue_insert_pointer(&server->request_queue, &request->server_pointer);
-    queue_insert_pointer(&client->request_queue, &request->client_pointer);
+    queue_put_pointer(&server->request_queue, &request->server_pointer);
+    queue_put_pointer(&client->request_queue, &request->client_pointer);
     return postgres_process(server);
 }
 
@@ -169,11 +165,9 @@ int postgres_process(server_t *server) {
     DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
     int error = 0;
     if (queue_empty(&server->postgres_queue) || queue_empty(&server->request_queue)) return error;
-    pointer_t *pointer = queue_head(&server->request_queue);
-    request_t *request = pointer_data(pointer, request_t, server_pointer);
+    request_t *request = pointer_data(queue_get_pointer(&server->request_queue), request_t, server_pointer);
     if ((error = postgres_pop_request(request))) { ERROR("postgres_pop_request\n"); return error; }
-    pointer = queue_head(&server->postgres_queue);
-    postgres_t *postgres = pointer_data(pointer, postgres_t, server_pointer);
+    postgres_t *postgres = pointer_data(queue_get_pointer(&server->postgres_queue), postgres_t, server_pointer);
     postgres->request = request;
     request->postgres = postgres;
     if ((error = postgres_pop_postgres(postgres))) { ERROR("postgres_pop_postgres\n"); request_free(request); return error; }

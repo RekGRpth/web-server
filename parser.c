@@ -28,7 +28,6 @@ static const http_parser_settings parser_settings = {
 
 void parser_init(client_t *client) {
 //    DEBUG("client=%p\n", client);
-//    client->parser.data = (void *)client;
     http_parser_init(&client->parser, HTTP_REQUEST); // void http_parser_init(http_parser *parser, enum http_parser_type type);
 }
 

@@ -21,14 +21,14 @@ client_t *client_init(uv_stream_t *server) {
     if (client->tcp.type != UV_TCP) { ERROR("client->tcp.type=%i\n", client->tcp.type); client_free(client); return NULL; }
     client->tcp.data = (void *)client;
     server_t *server_ = (server_t *)client->tcp.loop->data;
-    queue_insert_pointer(&server_->client_queue, &client->server_pointer);
+    queue_put_pointer(&server_->client_queue, &client->server_pointer);
     return client;
 }
 
 void client_free(client_t *client) {
     DEBUG("client=%p\n", client);
     server_t *server = (server_t *)client->tcp.loop->data; DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
-    while (!queue_empty(&client->request_queue)) request_free(pointer_data(queue_head(&client->request_queue), request_t, client_pointer));
+    while (!queue_empty(&client->request_queue)) request_free(pointer_data(queue_get_pointer(&client->request_queue), request_t, client_pointer));
     pointer_remove(&client->server_pointer);
     free(client);
 }

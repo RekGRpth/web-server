@@ -9,8 +9,8 @@
 int response_write(client_t *client, char *value, int length) {
     DEBUG("client=%p, value(%i)=%.*s\n", client, length, length, value);
     int error = 0;
-//    if ((error = client->tcp.type != UV_TCP)) { ERROR("client->tcp.type=%i\n", client->tcp.type); return error; }
-//    if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
+    if ((error = client->tcp.type != UV_TCP)) { ERROR("client->tcp.type=%i\n", client->tcp.type); return error; }
+    if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
     int headers_length = sizeof(HEADERS) - 1;
     for (int number = length; number /= 10; headers_length++);
     char headers[headers_length];

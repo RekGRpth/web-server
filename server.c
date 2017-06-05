@@ -33,9 +33,9 @@ server_t *server_init(uv_loop_t *loop) {
 
 void server_free(server_t *server) {
     ERROR("server=%p\n", server);
-    while (!queue_empty(&server->postgres_queue)) postgres_free(pointer_data(queue_head(&server->postgres_queue), postgres_t, server_pointer));
-    while (!queue_empty(&server->client_queue)) client_free(pointer_data(queue_head(&server->client_queue), client_t, server_pointer));
-    while (!queue_empty(&server->request_queue)) request_free(pointer_data(queue_head(&server->request_queue), request_t, server_pointer));
+    while (!queue_empty(&server->postgres_queue)) postgres_free(pointer_data(queue_get_pointer(&server->postgres_queue), postgres_t, server_pointer));
+    while (!queue_empty(&server->client_queue)) client_free(pointer_data(queue_get_pointer(&server->client_queue), client_t, server_pointer));
+    while (!queue_empty(&server->request_queue)) request_free(pointer_data(queue_get_pointer(&server->request_queue), request_t, server_pointer));
     free(server);
 }
 

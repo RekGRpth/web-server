@@ -13,7 +13,7 @@
 #   include "nodejs-http-parser/http_parser.h"
 #endif
 
-typedef PostgresPollingStatusType (*postgres_poll_t)(PGconn *conn);
+//typedef PostgresPollingStatusType (*postgres_poll_t)(PGconn *conn);
 
 typedef struct server_t server_t;
 typedef struct client_t client_t;
@@ -36,7 +36,7 @@ typedef struct client_t {
 
 typedef struct postgres_t {
     uv_poll_t poll;
-    postgres_poll_t postgres_poll;
+//    postgres_poll_t postgres_poll;
     char *conninfo;
     PGconn *conn;
     request_t *request;

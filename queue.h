@@ -23,9 +23,10 @@ int queue_count(queue_t *queue);
 
 #define pointer_t queue_t
 #define pointer_remove queue_remove
-#define queue_insert_pointer queue_insert_tail
+#define queue_put_pointer queue_insert_tail
 #define pointer_init queue_init
 #define pointer_data queue_data
+#define queue_get_pointer queue_head
 
 /* Private macros. */
 #define queue_next(q)       (*(queue_t **) &((*(q))[0]))
