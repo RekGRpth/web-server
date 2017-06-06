@@ -13,12 +13,10 @@
 void postgres_on_poll(uv_poll_t *handle, int status, int events); // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)
 int postgres_connect(uv_loop_t *loop, postgres_t *postgres);
 int postgres_reset(postgres_t *postgres);
-int postgres_push_postgres(postgres_t *postgres);
-int postgres_pop_postgres(postgres_t *postgres);
+int postgres_push(postgres_t *postgres);
+int postgres_pop(postgres_t *postgres);
 int postgres_process(server_t *server);
 void postgres_response(PGresult *result, postgres_t *postgres);
-int postgres_push_request(request_t *request);
-int postgres_pop_request(request_t *request);
 postgres_t *postgres_init_and_connect(uv_loop_t *loop, char *conninfo);
 void postgres_free(postgres_t *postgres);
 void postgres_error(PGresult *result, postgres_t *postgres);
