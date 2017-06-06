@@ -1,5 +1,6 @@
 #include <string.h> // memset, NULL
 #include "http_parser.h"
+#include "../macros.h"
 
 #define CALL(FOR) { if (FOR##_mark) { if (settings->on_##FOR) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; } }
 #define MARK(FOR) { if (!FOR##_mark) { FOR##_mark = p; } }
@@ -147,4 +148,24 @@ static struct {
 #undef HTTP_STRERROR_GEN
 const char *http_errno_description(enum http_errno err) {
     return http_strerror_tab[err].description;
+}
+
+static const char *method_strings[] = {
+#define XX(num, name, string) #string,
+    HTTP_METHOD_MAP(XX)
+#undef XX
+};
+
+const char *http_method_str (enum http_method m) {
+    return ELEM_AT(method_strings, m, "<unknown>");
+}
+
+static const char *status_strings[] = {
+#define XX(num, name, string) #string,
+    HTTP_STATUS_MAP(XX)
+#undef XX
+};
+
+const char *http_status_str (enum http_status s) {
+    return ELEM_AT(status_strings, s, "<unknown>");
 }
