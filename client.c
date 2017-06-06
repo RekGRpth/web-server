@@ -18,8 +18,14 @@ client_t *client_init(uv_stream_t *server) {
     queue_init(&client->request_queue);
     pointer_init(&client->server_pointer);
     if (uv_tcp_init(server->loop, &client->tcp)) { ERROR("uv_tcp_init\n"); client_free(client); return NULL; } // int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle)
-    if (client->tcp.type != UV_TCP) { ERROR("client->tcp.type=%i\n", client->tcp.type); client_free(client); return NULL; }
-    if (client->tcp.flags > MAX_FLAG) { ERROR("client->tcp.flags=%u\n", client->tcp.flags); return NULL; }
+//    if (uv_tcp_init_ex(server->loop, &client->tcp, AF_INET)) { ERROR("uv_tcp_init_ex\n"); client_free(client); return NULL; } // int uv_tcp_init_ex(uv_loop_t* loop, uv_tcp_t* handle, unsigned int flags)
+    if (client->tcp.type != UV_TCP) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); client_free(client); return NULL; }
+//    if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return NULL; }
+    if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); client_free(client); return NULL; }
+/*    uv_os_sock_t sock;
+    if (uv_fileno((const uv_handle_t*)&client->tcp, (uv_os_fd_t *)&sock)) { ERROR("uv_fileno\n"); client_free(client); return NULL; } // int uv_fileno(const uv_handle_t* handle, uv_os_fd_t* fd)
+    int on = 1;
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(int))) { ERROR("setsockopt\n"); client_free(client); return NULL; } // int setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len);*/
     client->tcp.data = (void *)client;
     server_t *server_ = (server_t *)client->tcp.loop->data;
     queue_put_pointer(&server_->client_queue, &client->server_pointer);
@@ -37,8 +43,8 @@ void client_free(client_t *client) {
 void client_close(client_t *client) {
     DEBUG("client=%p\n", client);
 //    DEBUG("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags);
-    if (client->tcp.type != UV_TCP) { ERROR("client->tcp.type=%i\n", client->tcp.type); return; }
-    if (client->tcp.flags > MAX_FLAG) { ERROR("client->tcp.flags=%u\n", client->tcp.flags); /*client_free(client);*/ return; }
+    if (client->tcp.type != UV_TCP) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return; }
+    if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); /*client_free(client);*/ return; }
     uv_handle_t *handle = (uv_handle_t *)&client->tcp;
     if (handle->type != UV_TCP) { ERROR("handle->type=%i\n", handle->type); return; }
     if (!uv_is_closing(handle)) uv_close(handle, client_on_close); // int uv_is_closing(const uv_handle_t* handle); void uv_close(uv_handle_t* handle, uv_close_cb close_cb)

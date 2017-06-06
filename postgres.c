@@ -108,8 +108,10 @@ void postgres_response(PGresult *result, postgres_t *postgres) {
     if (!request) { ERROR("no_request\n"); return; }
     if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); request_free(request); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
     client_t *client = request->client;
-    if (client->tcp.type != UV_TCP) { ERROR("client->tcp.type=%i\n", client->tcp.type); return; }
-    if (client->tcp.flags > MAX_FLAG) { ERROR("client->tcp.flags=%u\n", client->tcp.flags); return; }
+    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
+//    if (!client) { ERROR("no_client\n"); return; }
+    if (client->tcp.type != UV_TCP) { ERROR("client=%p, request=%p, client->tcp.type=%i\n", client, request, client->tcp.type); return; }
+    if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, request=%p, client->tcp.flags=%u\n", client, request, client->tcp.flags); return; }
     if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); return; } // int uv_is_closing(const uv_handle_t* handle)
     request_free(request);
     if (response_write(client, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) { ERROR("response_write\n"); client_close(client); return; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
@@ -141,8 +143,8 @@ int postgres_push_request(request_t *request) {
     int error = 0;
     client_t *client = request->client;
     pointer_remove(&request->server_pointer);
-    if ((error = client->tcp.type != UV_TCP)) { ERROR("client->tcp.type=%i\n", client->tcp.type); return error; }
-    if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client->tcp.flags=%u\n", client->tcp.flags); return error; }
+    if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
+    if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
     if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
     pointer_remove(&request->client_pointer);
     request->postgres = NULL;
@@ -157,8 +159,8 @@ int postgres_pop_request(request_t *request) {
     int error = 0;
     client_t *client = request->client;
     pointer_remove(&request->server_pointer);
-    if ((error = client->tcp.type != UV_TCP)) { ERROR("client->tcp.type=%i\n", client->tcp.type); return error; }
-    if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client->tcp.flags=%u\n", client->tcp.flags); return error; }
+    if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
+    if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
     if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
     pointer_remove(&request->client_pointer);
     return error;

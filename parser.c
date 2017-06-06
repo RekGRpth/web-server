@@ -93,8 +93,8 @@ int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) 
     request_t *request = (request_t *)parser->data;
     if ((error = !request)) { ERROR("no_request"); return error; }
     client_t *client = request->client;
-    if ((error = client->tcp.type != UV_TCP)) { ERROR("client->tcp.type=%i\n", client->tcp.type); return error; }
-    if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client->tcp.flags=%u\n", client->tcp.flags); return error; }
+    if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
+    if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
     if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
     if ((error = postgres_push_request(request))) { ERROR("postgres_push_request\n"); return error; }
     return error;
