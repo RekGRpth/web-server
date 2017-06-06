@@ -119,7 +119,7 @@ void postgres_response(PGresult *result, postgres_t *postgres) {
 }
 
 int postgres_push_postgres(postgres_t *postgres) {
-    DEBUG("postgres=%p, postgres->request=%p\n", postgres, postgres->request);
+//    DEBUG("postgres=%p, postgres->request=%p\n", postgres, postgres->request);
     int error = 0;
     if ((error = postgres_socket(postgres))) { ERROR("postgres_socket\n"); return error; }
     else if ((error = PQisBusy(postgres->conn))) { ERROR("PQisBusy\n"); return error; }
@@ -140,7 +140,7 @@ int postgres_pop_postgres(postgres_t *postgres) {
 }
 
 int postgres_push_request(request_t *request) {
-    DEBUG("request=%p\n", request);
+//    DEBUG("request=%p\n", request);
     int error = 0;
     client_t *client = request->client;
     pointer_remove(&request->server_pointer);
@@ -156,7 +156,7 @@ int postgres_push_request(request_t *request) {
 }
 
 int postgres_pop_request(request_t *request) {
-    DEBUG("request=%p\n", request);
+//    DEBUG("request=%p\n", request);
     int error = 0;
     client_t *client = request->client;
     pointer_remove(&request->server_pointer);
@@ -168,7 +168,7 @@ int postgres_pop_request(request_t *request) {
 }
 
 int postgres_process(server_t *server) {
-    DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
+//    DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
     int error = 0;
     if (queue_empty(&server->postgres_queue) || queue_empty(&server->request_queue)) return error;
     request_t *request = pointer_data(queue_get_pointer(&server->request_queue), request_t, server_pointer);
@@ -178,7 +178,7 @@ int postgres_process(server_t *server) {
     request->postgres = postgres;
     if ((error = postgres_pop_postgres(postgres))) { ERROR("postgres_pop_postgres\n"); request_free(request); return error; }
 //    if ((error = response_write(request, "hi", sizeof("hi") - 1))) { ERROR("response_write\n"); request_close(request->client); } return error; // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
-    DEBUG("request=%p\n", request);
+//    DEBUG("request=%p\n", request);
     if ((error = !PQsendQuery(postgres->conn, "select to_json(now());"))) { ERROR("PQsendQuery:%s\n", PQerrorMessage(postgres->conn)); request_free(request); return error; } // int PQsendQuery(PGconn *conn, const char *command); char *PQerrorMessage(const PGconn *conn)
     if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { ERROR("uv_poll_start\n"); request_free(request); return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
     return error;
