@@ -9,7 +9,7 @@ request_t *request_init(client_t *client) {
     request_t *request = (request_t *)malloc(sizeof(request_t));
     if (!request) { ERROR("malloc\n"); return NULL; }
     request->client = client;
-//    request->postgres = NULL;
+    request->postgres = NULL;
     pointer_init(&request->server_pointer);
     pointer_init(&request->client_pointer);
     queue_put_pointer(&client->request_queue, &request->client_pointer);
