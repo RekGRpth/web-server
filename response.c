@@ -16,8 +16,9 @@ int response_write(client_t *client, char *value, int length) {
     for (int number = length; number /= 10; headers_length++);
     char headers[headers_length];
     if ((error = snprintf(headers, headers_length, HEADERS, length) - headers_length + 1)) { ERROR("snprintf\n"); return error; }
+    char *status = "HTTP/1.1 200 OK\r\n";
     const uv_buf_t bufs[] = {
-        {.base = "HTTP/1.1 200 OK\r\n", .len = sizeof("HTTP/1.1 200 OK\r\n") - 1},
+        {.base = status, .len = sizeof(status) - 1},
         {.base = headers, .len = headers_length - 1},
         {.base = "\r\n", .len = sizeof("\r\n") - 1},
         {.base = value, .len = length}

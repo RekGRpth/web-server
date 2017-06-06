@@ -104,7 +104,18 @@ int postgres_reset(postgres_t *postgres) {
 }
 
 void postgres_error(PGresult *result, postgres_t *postgres) {
-    ERROR("%s", PQresultErrorMessage(result)); // char *PQresultErrorMessage(const PGresult *res)
+    char *message = PQresultErrorMessage(result); // char *PQresultErrorMessage(const PGresult *res)
+    ERROR("%s", message);
+    if (postgres_socket(postgres)) { ERROR("postgres_socket\n"); return; }
+    request_t *request = postgres->request;
+    if (!request) { ERROR("no_request\n"); return; }
+    client_t *client = request->client;
+//    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
+    if (client->tcp.type != UV_TCP) { ERROR("client=%p, request=%p, client->tcp.type=%i\n", client, request, client->tcp.type); return; }
+    if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, request=%p, client->tcp.flags=%u\n", client, request, client->tcp.flags); return; }
+    if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); return; } // int uv_is_closing(const uv_handle_t* handle)
+    request_free(request);
+    if (response_write(client, message, strlen(message))) { ERROR("response_write\n"); client_close(client); return; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
 }
 
 void postgres_response(PGresult *result, postgres_t *postgres) {
