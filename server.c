@@ -40,7 +40,7 @@ void server_free(server_t *server) {
 }
 
 void server_postgres(uv_loop_t *loop) {
-    DEBUG("loop=%p\n", loop);
+//    DEBUG("loop=%p\n", loop);
     char *conninfo = getenv("WEBSERVER_POSTGRES_CONNINFO"); // char *getenv(const char *name)
     if (!conninfo) conninfo = "postgresql://localhost?application_name=webserver";
     char *webserver_postgres_count = getenv("WEBSERVER_POSTGRES_COUNT"); // char *getenv(const char *name);

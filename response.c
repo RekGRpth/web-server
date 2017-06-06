@@ -7,7 +7,7 @@
     "Connection: keep-alive\r\n"
 
 int response_write(client_t *client, char *value, int length) {
-    DEBUG("client=%p, value(%i)=%.*s\n", client, length, length, value);
+//    DEBUG("client=%p, value(%i)=%.*s\n", client, length, length, value);
     int error = 0;
     if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
     if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
@@ -29,7 +29,7 @@ int response_write(client_t *client, char *value, int length) {
 }
 
 void response_on_write(uv_write_t *req, int status) { // void (*uv_write_cb)(uv_write_t* req, int status)
-    DEBUG("req=%p, status=%i\n", req, status);
+//    DEBUG("req=%p, status=%i\n", req, status);
     if (status) ERROR("status=%i\n", status);
     client_t *client = (client_t *)req->handle->data;
     parser_init_or_client_close(client);
@@ -45,6 +45,6 @@ response_t *response_init() {
 }
 
 void response_free(response_t *response) {
-    DEBUG("response=%p\n", response);
+//    DEBUG("response=%p\n", response);
     free(response);
 }
