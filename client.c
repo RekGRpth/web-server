@@ -34,6 +34,7 @@ client_t *client_init(uv_stream_t *server) {
 
 void client_free(client_t *client) {
 //    DEBUG("client=%p\n", client);
+    DEBUG("client=%p, queue_count(&client->request_queue)=%i\n", client, queue_count(&client->request_queue));
 //    server_t *server = (server_t *)client->tcp.loop->data; DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
     while (!queue_empty(&client->request_queue)) request_free(pointer_data(queue_get_pointer(&client->request_queue), request_t, client_pointer));
     pointer_remove(&client->server_pointer);
