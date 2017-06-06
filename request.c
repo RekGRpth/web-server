@@ -24,10 +24,11 @@ void request_free(request_t *request) {
 //    request->client = NULL;
     pointer_remove(&request->server_pointer);
     pointer_remove(&request->client_pointer);
-    if (request->postgres) {
+    if (request->postgres) if (postgres_cancel(request->postgres)) ERROR("postgres_cancel\n");
+/*    if (request->postgres) {
         request->postgres->request = NULL;
         if (postgres_push(request->postgres)) ERROR("postgres_push\n");
-    }
+    }*/
     free(request);
 }
 

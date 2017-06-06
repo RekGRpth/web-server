@@ -22,5 +22,6 @@ void postgres_free(postgres_t *postgres);
 void postgres_error(PGresult *result, postgres_t *postgres);
 int postgres_socket(postgres_t *postgres);
 void postgres_listen(postgres_t *postgres);
+int postgres_cancel(postgres_t *postgres);
 
 #endif // _POSTGRES_H

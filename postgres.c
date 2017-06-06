@@ -123,7 +123,7 @@ int postgres_push(postgres_t *postgres) {
     int error = 0;
 //    postgres->request = NULL;
     if ((error = postgres_socket(postgres))) { ERROR("postgres_socket\n"); return error; }
-    else if ((error = PQisBusy(postgres->conn))) { ERROR("PQisBusy\n"); return error; }
+    if ((error = PQisBusy(postgres->conn))) { ERROR("PQisBusy\n"); return error; }
     pointer_remove(&postgres->server_pointer);
     postgres->request = NULL;
     server_t *server = (server_t *)postgres->poll.loop->data;
@@ -135,8 +135,23 @@ int postgres_pop(postgres_t *postgres) {
 //    DEBUG("postgres=%p\n", postgres);
     int error = 0;
     if ((error = postgres_socket(postgres))) { ERROR("postgres_socket\n"); return error; }
-    else if ((error = PQisBusy(postgres->conn))) { ERROR("PQisBusy\n"); return error; }
+    if ((error = PQisBusy(postgres->conn))) { ERROR("PQisBusy\n"); return error; }
     pointer_remove(&postgres->server_pointer);
+    return error;
+}
+
+int postgres_cancel(postgres_t *postgres) {
+    DEBUG("postgres=%p\n", postgres);
+    int error = 0;
+    postgres->request = NULL;
+    if ((error = postgres_socket(postgres))) { ERROR("postgres_socket\n"); return error; }
+    if (!PQisBusy(postgres->conn)) return postgres_push(postgres);
+    PGcancel *cancel = PQgetCancel(postgres->conn); // PGcancel *PQgetCancel(PGconn *conn)
+    if ((error = !cancel)) { ERROR("PQgetCancel\n"); return error; }
+    int errbufsize = 256; char errbuf[errbufsize];
+    if ((error = !PQcancel(cancel, errbuf, errbufsize))) ERROR("PQcancel:%s\n", errbuf); // int PQcancel(PGcancel *cancel, char *errbuf, int errbufsize)
+    PQfreeCancel(cancel); // void PQfreeCancel(PGcancel *cancel)
+//    if ((error = postgres_push(postgres))) { ERROR("postgres_push\n"); return error; }
     return error;
 }
 
