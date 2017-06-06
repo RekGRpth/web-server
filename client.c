@@ -18,14 +18,8 @@ client_t *client_init(uv_stream_t *server) {
     queue_init(&client->request_queue);
     pointer_init(&client->server_pointer);
     if (uv_tcp_init(server->loop, &client->tcp)) { ERROR("uv_tcp_init\n"); client_free(client); return NULL; } // int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle)
-//    if (uv_tcp_init_ex(server->loop, &client->tcp, AF_INET)) { ERROR("uv_tcp_init_ex\n"); client_free(client); return NULL; } // int uv_tcp_init_ex(uv_loop_t* loop, uv_tcp_t* handle, unsigned int flags)
     if (client->tcp.type != UV_TCP) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); client_free(client); return NULL; }
-//    if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return NULL; }
     if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); client_free(client); return NULL; }
-/*    uv_os_sock_t sock;
-    if (uv_fileno((const uv_handle_t*)&client->tcp, (uv_os_fd_t *)&sock)) { ERROR("uv_fileno\n"); client_free(client); return NULL; } // int uv_fileno(const uv_handle_t* handle, uv_os_fd_t* fd)
-    int on = 1;
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(int))) { ERROR("setsockopt\n"); client_free(client); return NULL; } // int setsockopt(int socket, int level, int option_name, const void *option_value, socklen_t option_len);*/
     client->tcp.data = (void *)client;
     server_t *server_ = (server_t *)client->tcp.loop->data;
     queue_put_pointer(&server_->client_queue, &client->server_pointer);

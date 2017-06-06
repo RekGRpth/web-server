@@ -21,14 +21,9 @@ request_t *request_init(client_t *client) {
 void request_free(request_t *request) {
 //    DEBUG("request=%p, request->client=%p, request->postgres=%p\n", request, request->client, request->postgres);
 //    client_t *client = request->client; server_t *server = (server_t *)client->tcp.loop->data; DEBUG("queue_count(&server->postgres_queue)=%i, queue_count(&server->client_queue)=%i, queue_count(&server->request_queue)=%i\n", queue_count(&server->postgres_queue), queue_count(&server->client_queue), queue_count(&server->request_queue));
-//    request->client = NULL;
     pointer_remove(&request->server_pointer);
     pointer_remove(&request->client_pointer);
     if (request->postgres) if (postgres_cancel(request->postgres)) ERROR("postgres_cancel\n");
-/*    if (request->postgres) {
-        request->postgres->request = NULL;
-        if (postgres_push(request->postgres)) ERROR("postgres_push\n");
-    }*/
     free(request);
 }
 

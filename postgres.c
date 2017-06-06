@@ -36,17 +36,6 @@ int postgres_connect(uv_loop_t *loop, postgres_t *postgres) {
     return error;
 }
 
-/*int postgres_start(uv_loop_t *loop, postgres_t *postgres) {
-//    DEBUG("loop=%p, postgres=%p\n", loop, postgres);
-    int error = 0;
-    uv_os_sock_t postgres_sock = PQsocket(postgres->conn);
-    if ((error = postgres_sock < 0)) { ERROR("PQsocket\n"); postgres_reset(postgres); return error; }
-    if ((error = uv_poll_init_socket(loop, &postgres->poll, postgres_sock))) { ERROR("uv_poll_init_socket\n"); postgres_reset(postgres); return error; } // int uv_poll_init_socket(uv_loop_t* loop, uv_poll_t* handle, uv_os_sock_t socket)
-    postgres->poll.data = (void *)postgres;
-    if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { ERROR("uv_poll_start\n"); postgres_reset(postgres); return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
-    return error;
-}*/
-
 void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)
 //    DEBUG("handle=%p, status=%i, events=%i\n", handle, status, events);
     postgres_t *postgres = (postgres_t *)handle->data;
@@ -125,7 +114,6 @@ void postgres_response(PGresult *result, postgres_t *postgres) {
     if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); request_free(request); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
     client_t *client = request->client;
 //    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
-//    if (!client) { ERROR("no_client\n"); return; }
     if (client->tcp.type != UV_TCP) { ERROR("client=%p, request=%p, client->tcp.type=%i\n", client, request, client->tcp.type); return; }
     if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, request=%p, client->tcp.flags=%u\n", client, request, client->tcp.flags); return; }
     if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); return; } // int uv_is_closing(const uv_handle_t* handle)
