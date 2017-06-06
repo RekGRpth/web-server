@@ -28,16 +28,16 @@ int postgres_connect(uv_loop_t *loop, postgres_t *postgres) {
     if ((error = !postgres->conn)) { ERROR("PQconnectStart\n"); return error; }
     if ((error = PQstatus(postgres->conn) == CONNECTION_BAD)) { ERROR("PQstatus=CONNECTION_BAD\n"); PQfinish(postgres->conn); return error; } // ConnStatusType PQstatus(const PGconn *conn)
 //    PQsetErrorVerbosity(postgres->conn, PQERRORS_VERBOSE); // PGVerbosity PQsetErrorVerbosity(PGconn *conn, PGVerbosity verbosity)
-/*    uv_os_sock_t postgres_sock = PQsocket(postgres->conn);
+    uv_os_sock_t postgres_sock = PQsocket(postgres->conn);
     if ((error = postgres_sock < 0)) { ERROR("PQsocket\n"); PQfinish(postgres->conn); return error; }
     if ((error = uv_poll_init_socket(loop, &postgres->poll, postgres_sock))) { ERROR("uv_poll_init_socket\n"); PQfinish(postgres->conn); return error; } // int uv_poll_init_socket(uv_loop_t* loop, uv_poll_t* handle, uv_os_sock_t socket)
     postgres->poll.data = (void *)postgres;
     if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { ERROR("uv_poll_start\n"); PQfinish(postgres->conn); return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
-    return error;*/
-    return postgres_start(loop, postgres);
+    return error;
+//    return postgres_start(loop, postgres);
 }
 
-int postgres_start(uv_loop_t *loop, postgres_t *postgres) {
+/*int postgres_start(uv_loop_t *loop, postgres_t *postgres) {
 //    DEBUG("loop=%p, postgres=%p\n", loop, postgres);
     int error = 0;
     uv_os_sock_t postgres_sock = PQsocket(postgres->conn);
@@ -46,7 +46,7 @@ int postgres_start(uv_loop_t *loop, postgres_t *postgres) {
     postgres->poll.data = (void *)postgres;
     if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { ERROR("uv_poll_start\n"); postgres_reset(postgres); return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
     return error;
-}
+}*/
 
 void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)
 //    DEBUG("handle=%p, status=%i, events=%i\n", handle, status, events);
@@ -110,13 +110,14 @@ int postgres_reset(postgres_t *postgres) {
 //    PQfinish(postgres->conn);
 //    if ((error = postgres_connect(postgres->poll.loop, postgres))) { ERROR("postgres_connect\n"); postgres_reset(postgres); return error; }
     if ((error = !PQresetStart(postgres->conn))) { ERROR("PQresetStart\n"); return error; } // int PQresetStart(PGconn *conn);
-    return postgres_start(postgres->poll.loop, postgres);
-//    if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { ERROR("uv_poll_start\n"); return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
- //   return error;
+//    return postgres_start(postgres->poll.loop, postgres);
+    postgres->poll.io_watcher.fd = PQsocket(postgres->conn);
+    if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { ERROR("uv_poll_start\n"); return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
+    return error;
 }
 
 void postgres_error(PGresult *result, postgres_t *postgres) {
-    ERROR("\n%s\n", PQresultErrorMessage(result)); // char *PQresultErrorMessage(const PGresult *res)
+    ERROR("%s\n", PQresultErrorMessage(result)); // char *PQresultErrorMessage(const PGresult *res)
 }
 
 void postgres_response(PGresult *result, postgres_t *postgres) {

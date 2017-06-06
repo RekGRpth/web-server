@@ -13,7 +13,7 @@
 postgres_t *postgres_init_and_connect(uv_loop_t *loop, char *conninfo);
 void postgres_free(postgres_t *postgres);
 int postgres_connect(uv_loop_t *loop, postgres_t *postgres);
-int postgres_start(uv_loop_t *loop, postgres_t *postgres);
+//int postgres_start(uv_loop_t *loop, postgres_t *postgres);
 void postgres_on_poll(uv_poll_t *handle, int status, int events); // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)
 void postgres_listen(postgres_t *postgres);
 int postgres_socket(postgres_t *postgres);
