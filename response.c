@@ -6,8 +6,8 @@
     "Content-Length: %d\r\n" \
     "Connection: keep-alive\r\n"
 
-int response_write(client_t *client, char *value, int length) {
-//    DEBUG("client=%p, value(%i)=%.*s\n", client, length, length, value);
+int response_write(client_t *client, char *body, int length) {
+//    DEBUG("client=%p, body(%i)=%.*s\n", client, length, length, body);
     int error = 0;
     if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
     if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
@@ -17,11 +17,12 @@ int response_write(client_t *client, char *value, int length) {
     char headers[headers_length];
     if ((error = snprintf(headers, headers_length, HEADERS, length) - headers_length + 1)) { ERROR("snprintf\n"); return error; }
     char *status = "HTTP/1.1 200 OK\r\n";
+    char *clrf = "\r\n";
     const uv_buf_t bufs[] = {
         {.base = status, .len = sizeof(status) - 1},
         {.base = headers, .len = headers_length - 1},
-        {.base = "\r\n", .len = sizeof("\r\n") - 1},
-        {.base = value, .len = length}
+        {.base = clrf, .len = sizeof(clrf) - 1},
+        {.base = body, .len = length}
     };
     response_t *response = response_init();
     if ((error = !response)) { ERROR("response_init\n"); return error; }
