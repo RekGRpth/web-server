@@ -58,7 +58,7 @@ void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_
         if (PQisBusy(postgres->conn)) return; // int PQisBusy(PGconn *conn)
         for (PGresult *result; (result = PQgetResult(postgres->conn)); PQclear(result)) switch (PQresultStatus(result)) { // PGresult *PQgetResult(PGconn *conn); void PQclear(PGresult *res); ExecStatusType PQresultStatus(const PGresult *res)
             case PGRES_TUPLES_OK: postgres_success(result, postgres); break;
-            case PGRES_FATAL_ERROR: ERROR("PGRES_FATAL_ERROR\n"); postgres_error(result, postgres); break;
+            case PGRES_FATAL_ERROR: /*ERROR("PGRES_FATAL_ERROR\n"); */postgres_error(result, postgres); break;
             default: break;
         }
         for (PGnotify *notify; (notify = PQnotifies(postgres->conn)); PQfreemem(notify)) { // PGnotify *PQnotifies(PGconn *conn); void PQfreemem(void *ptr)
