@@ -31,6 +31,7 @@ void parser_init(client_t *client) {
 }
 
 void parser_init_or_client_close(client_t *client) {
+//    DEBUG("client=%p\n", client);
     if (parser_should_keep_alive(client)) parser_init(client); else client_close(client);
 }
 
@@ -40,17 +41,19 @@ int parser_should_keep_alive(client_t *client) {
 }
 
 size_t parser_execute(client_t *client, const char *data, size_t len) {
-//    DEBUG("client=%p\n", client);
-    client->parser.data = (void *)client;
+//    DEBUG("client=%p, client->parser.data=%p\n", client, client->parser.data);
+    if (!client->parser.data) client->parser.data = (void *)client;
     return http_parser_execute(&client->parser, (const http_parser_settings *)&parser_settings, data, len);// size_t http_parser_execute(http_parser *parser, const http_parser_settings *settings, const char *data, size_t len);
 }
 
 int parser_on_message_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
 //    DEBUG("\n");
     int error = 0;
+//    DEBUG("parser->data=%p\n", parser->data);
     client_t *client = (client_t *)parser->data;
     parser->data = (void *)request_init(client);
     if ((error = !parser->data)) { ERROR("request_init\n"); return error; }
+//    DEBUG("parser->data=%p\n", parser->data);
     request_t *request = (request_t *)parser->data;
     if ((error = xbuf_cat(&request->xbuf, "{") <= 0)) { ERROR("xbuf_cat\n"); return error; }
     request->state = STATE_OPEN;
@@ -108,8 +111,9 @@ int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) 
     int error = 0;
     request_t *request = (request_t *)parser->data;
     if ((error = !request)) { ERROR("no_request"); return error; }
-    if ((error = xbuf_cat(&request->xbuf, "}") <= 0)) { ERROR("xbuf_cat\n"); return error; }
+//    if ((error = xbuf_cat(&request->xbuf, "}") <= 0)) { ERROR("xbuf_cat\n"); return error; }
     client_t *client = request->client;
+    client->parser.data = NULL;
     if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
     if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
     if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
@@ -172,3 +176,12 @@ int parser_on_headers_begin(http_parser *parser) { // typedef int (*http_cb) (ht
     return error;
 }
 #endif
+
+const char *http_status_str(enum http_status s) {
+    switch (s) {
+#define XX(num, name, string) case HTTP_STATUS_##name: return #num " " #string;
+    HTTP_STATUS_MAP(XX)
+#undef XX
+        default: return "<unknown>";
+    }
+}

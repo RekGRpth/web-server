@@ -39,5 +39,6 @@ int parser_on_var_field(http_parser *parser, const char *at, size_t length); // 
 int parser_on_var_value(http_parser *parser, const char *at, size_t length); // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
 int parser_on_headers_begin(http_parser *parser); // typedef int (*http_cb) (http_parser*);
 #endif
+const char *http_status_str(enum http_status s);
 
 #endif // _PARSER_H

@@ -24,12 +24,12 @@
     var_field    = field >{ FILD(var); } ${ STAT(var_field); } %{ CALL(var_field); };
     var_value    = ( field | zlen ) >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
     var          = var_field "="? var_value;
-    vars         = ( var ( "&" var )* "&"? ); #>{ MARK(query); } ${ STAT(query); } %{ CALL(query); };
+    vars         = var ( "&" var )* "&"?;
     major        = "1" %{ parser->http_major = '1' - '0'; };
     minor        = "0" %{ parser->http_minor = '0' - '0'; } | "1" %{ parser->http_minor = '1' - '0'; };
-    version      = ( "HTTP" "/" major "." minor ); #>{ MARK(version); } ${ STAT(version); } %{ CALL(version); };
-    method       = ( "GET"  %{ parser->method = HTTP_GET; } | "POST" %{ parser->method = HTTP_POST; } | ( upper | digit | safe )+ ); #>{ MARK(method); } ${ STAT(method); } %{ CALL(method); };
-    path         = ( "/"? args? ); #>{ MARK(path); } ${ STAT(path); } %{ CALL(path); };
+    version      = "HTTP" "/" major "." minor;
+    method       = "GET"  %{ parser->method = HTTP_GET; } | "POST" %{ parser->method = HTTP_POST; } | ( upper | digit | safe )+;
+    path         = "/"? args?;
     url          = ( path ( "?" vars? )? ( "#" fragment? )? ) >{ MARK(url); } ${ STAT(url); } %{ CALL(url); };
     length       = digit >{ mark = p; } %{ if (parser->content_length > 0) { parser->content_length *= 10; } parser->content_length += (*mark - '0'); };
     header_field = token >{ if (!parser->headers_complete) { FILD(header); } } ${ STAT(header_field); } %{ CALL(header_field); };
@@ -154,13 +154,4 @@ static const char *method_strings[] = {
 
 const char *http_method_str(enum http_method m) {
     return ELEM_AT(method_strings, m, "<unknown>");
-}
-
-const char *http_status_str(enum http_status s) {
-    switch (s) {
-#define XX(num, name, string) case HTTP_STATUS_##name: return #num " " #string;
-    HTTP_STATUS_MAP(XX)
-#undef XX
-        default: return "<unknown>";
-    }
 }

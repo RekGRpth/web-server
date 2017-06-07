@@ -139,6 +139,7 @@ typedef int (*http_cb) (http_parser*);
   XX(428, PRECONDITION_REQUIRED,           Precondition Required)           \
   XX(429, TOO_MANY_REQUESTS,               Too Many Requests)               \
   XX(431, REQUEST_HEADER_FIELDS_TOO_LARGE, Request Header Fields Too Large) \
+  XX(444, NO_RESPONSE,                     No Response)                     \
   XX(451, UNAVAILABLE_FOR_LEGAL_REASONS,   Unavailable For Legal Reasons)   \
   XX(500, INTERNAL_SERVER_ERROR,           Internal Server Error)           \
   XX(501, NOT_IMPLEMENTED,                 Not Implemented)                 \
