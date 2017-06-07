@@ -55,7 +55,7 @@ void client_on_close(uv_handle_t *handle) { // void (*uv_close_cb)(uv_handle_t* 
 
 void client_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
 //    DEBUG("handle=%p, suggested_size=%li, buf=%p\n", handle, suggested_size, buf);
-    suggested_size = 8;
+//    suggested_size = 8;
 //    suggested_size = 16;
 //    suggested_size = 128;
     buf->base = (char *)malloc(suggested_size);
