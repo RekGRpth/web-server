@@ -57,7 +57,7 @@ void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_
         if (!PQconsumeInput(postgres->conn)) { ERROR("PQconsumeInput:%s", PQerrorMessage(postgres->conn)); postgres_reset(postgres); return; } // int PQconsumeInput(PGconn *conn); char *PQerrorMessage(const PGconn *conn)
         if (PQisBusy(postgres->conn)) return; // int PQisBusy(PGconn *conn)
         for (PGresult *result; (result = PQgetResult(postgres->conn)); PQclear(result)) switch (PQresultStatus(result)) { // PGresult *PQgetResult(PGconn *conn); void PQclear(PGresult *res); ExecStatusType PQresultStatus(const PGresult *res)
-            case PGRES_TUPLES_OK: postgres_response(result, postgres); break;
+            case PGRES_TUPLES_OK: postgres_success(result, postgres); break;
             case PGRES_FATAL_ERROR: ERROR("PGRES_FATAL_ERROR\n"); postgres_error(result, postgres); break;
             default: break;
         }
@@ -108,28 +108,43 @@ void postgres_error(PGresult *result, postgres_t *postgres) {
     ERROR("%s", message);
     if (postgres_socket(postgres)) { ERROR("postgres_socket\n"); return; }
     request_t *request = postgres->request;
-    if (!request) { ERROR("no_request\n"); return; }
+    if (postgres_response(request, HTTP_STATUS_OK, message, strlen(message))) ERROR("postgres_write\n");
+/*    if (!request) { ERROR("no_request\n"); return; }
     client_t *client = request->client;
 //    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
     if (client->tcp.type != UV_TCP) { ERROR("client=%p, request=%p, client->tcp.type=%i\n", client, request, client->tcp.type); return; }
     if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, request=%p, client->tcp.flags=%u\n", client, request, client->tcp.flags); return; }
     if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); return; } // int uv_is_closing(const uv_handle_t* handle)
     request_free(request);
-    if (response_write(client, message, strlen(message))) { ERROR("response_write\n"); client_close(client); return; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
+    if (response_write(client, HTTP_STATUS_OK, message, strlen(message))) { ERROR("response_write\n"); client_close(client); return; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)*/
 }
 
-void postgres_response(PGresult *result, postgres_t *postgres) {
+void postgres_success(PGresult *result, postgres_t *postgres) {
 //    DEBUG("result=%p, postgres=%p\n", result, postgres);
     request_t *request = postgres->request;
-    if (!request) { ERROR("no_request\n"); return; }
-    if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); request_free(request); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
-    client_t *client = request->client;
+//    if (!request) { ERROR("no_request\n"); return; }
+    if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); if (request) request_free(request); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
+    if (postgres_response(request, HTTP_STATUS_OK, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) ERROR("postgres_write\n");
+/*    client_t *client = request->client;
 //    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
     if (client->tcp.type != UV_TCP) { ERROR("client=%p, request=%p, client->tcp.type=%i\n", client, request, client->tcp.type); return; }
     if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, request=%p, client->tcp.flags=%u\n", client, request, client->tcp.flags); return; }
     if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); return; } // int uv_is_closing(const uv_handle_t* handle)
     request_free(request);
-    if (response_write(client, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) { ERROR("response_write\n"); client_close(client); return; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
+    if (response_write(client, HTTP_STATUS_OK, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) { ERROR("response_write\n"); client_close(client); return; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)*/
+}
+
+int postgres_response(request_t *request, enum http_status code, char *body, int length) {
+    int error = 0;
+    if ((error = !request)) { ERROR("no_request\n"); return error; }
+    client_t *client = request->client;
+//    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
+    if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, request=%p, client->tcp.type=%i\n", client, request, client->tcp.type); return error; }
+    if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, request=%p, client->tcp.flags=%u\n", client, request, client->tcp.flags); return error; }
+    if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
+    request_free(request);
+    if ((error = response_write(client, code, body, length))) { ERROR("response_write\n"); client_close(client); return error; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
+    return error;
 }
 
 int postgres_push(postgres_t *postgres) {

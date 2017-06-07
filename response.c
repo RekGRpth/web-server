@@ -4,13 +4,13 @@
 #define CRLF "\r\n"
 
 #define HEADERS \
-    "Content-Type: application/json"CRLF \
-    "Content-Length: %d"CRLF \
-    "Connection: keep-alive"CRLF
+    "Content-Type: application/json" CRLF \
+    "Content-Length: %d" CRLF \
+    "Connection: keep-alive" CRLF
 
-#define STATUS "HTTP/%d.%d %s"CRLF
+#define STATUS "HTTP/%d.%d %s" CRLF
 
-int response_write(client_t *client, char *body, int length) {
+int response_write(client_t *client, enum http_status code, char *body, int length) {
 //    DEBUG("client=%p, body(%i)=%.*s\n", client, length, length, body);
     int error = 0;
     if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
@@ -20,7 +20,7 @@ int response_write(client_t *client, char *body, int length) {
     for (int number = length; number /= 10; headers_length++);
     char headers[headers_length];
     if ((error = snprintf(headers, headers_length, HEADERS, length) - headers_length + 1)) { ERROR("snprintf\n"); return error; }
-    int code = HTTP_STATUS_OK;
+//    int code = HTTP_STATUS_OK;
     int status_length = sizeof(STATUS) - 4;
 //    DEBUG("status_length=%i\n", status_length);
     const char *status_str = http_status_str(code);
