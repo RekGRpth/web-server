@@ -15,10 +15,10 @@ static const http_parser_settings parser_settings = {
     .on_chunk_header = parser_on_chunk_header, // http_cb
     .on_chunk_complete = parser_on_chunk_complete, // http_cb
 #ifdef RAGEL_HTTP_PARSER
-    .on_version = parser_on_version, // http_data_cb
-    .on_method = parser_on_method, // http_data_cb
-    .on_query = parser_on_query, // http_data_cb
-    .on_path = parser_on_path, // http_data_cb
+//    .on_version = parser_on_version, // http_data_cb
+//    .on_method = parser_on_method, // http_data_cb
+//    .on_query = parser_on_query, // http_data_cb
+//    .on_path = parser_on_path, // http_data_cb
     .on_arg = parser_on_arg, // http_data_cb
     .on_var_field = parser_on_var_field, // http_data_cb
     .on_var_value = parser_on_var_value, // http_data_cb
@@ -111,7 +111,7 @@ int parser_on_chunk_complete(http_parser *parser) { // typedef int (*http_cb) (h
 }
 
 #ifdef RAGEL_HTTP_PARSER
-int parser_on_version(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
+/*int parser_on_version(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
 //    DEBUG("version(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
@@ -130,7 +130,7 @@ int parser_on_path(http_parser *parser, const char *at, size_t length) { // type
 //    DEBUG("path(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
-
+*/
 int parser_on_arg(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
 //    DEBUG("arg(%li)=%.*s\n", length, (int)length, at);
     return 0;

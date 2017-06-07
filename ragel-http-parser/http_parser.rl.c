@@ -11,48 +11,44 @@
 
 %%{
     machine http_parser;
-    # https://www.ietf.org/rfc/rfc2396.txt
-    # https://www.ietf.org/rfc/rfc2616.txt
-    # https://www.ietf.org/rfc/rfc3986.txt
-    crlf            = "\r" "\n";
-    control         = cntrl | 127;
-    safe            = "$" | "-" | "_" | ".";
-    tspecials       = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\\" | "\"" | "/" | "[" | "]" | "?" | "=" | "{" | "}" | space | "\t";
-    token           = ( ^control & ^tspecials )+;
-    fragment        = token;
-    arg             = token >{ MARK(arg); } ${ STAT(arg); } %{ CALL(arg); };
-    args            = arg ( "/" arg )* "/"?;
-    text            = ( ^control | space )+;
-    field           = token -- "&";
-    var_field       = field >{ FILD(var); } ${ STAT(var_field); } %{ CALL(var_field); };
-    var_value       = ( field | zlen ) >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
-    var             = var_field "="? var_value;
-    vars            = ( var ( "&" var )* "&"? ) >{ MARK(query); } ${ STAT(query); } %{ CALL(query); };
-    major           = "1" %{ parser->http_major = '1' - '0'; };
-    minor           = "0" %{ parser->http_minor = '0' - '0'; } | "1" %{ parser->http_minor = '1' - '0'; };
-    version         = ( "HTTP" "/" major "." minor ) >{ MARK(version); } ${ STAT(version); } %{ CALL(version); };
-    method          = ( "GET"  %{ parser->method = HTTP_GET; } | "POST" %{ parser->method = HTTP_POST; } | ( upper | digit | safe )+ ) >{ MARK(method); } ${ STAT(method); } %{ CALL(method); };
-    path            = ( "/"? args? ) >{ MARK(path); } ${ STAT(path); } %{ CALL(path); };
-    url             = ( path ( "?" vars? )? ( "#" fragment? )? ) >{ MARK(url); } ${ STAT(url); } %{ CALL(url); };
-    length          = digit >{ mark = p; } %{ if (parser->content_length > 0) { parser->content_length *= 10; } parser->content_length += (*mark - '0'); };
-    header_field    = token >{ if (!parser->headers_complete) { FILD(header); } } ${ STAT(header_field); } %{ CALL(header_field); };
-    header_value    = ( ^space any* ) >{ VALU(header); } ${ STAT(header_value); } %{ CALL(header_value); };
-    header          = ( "Connection"i space* ':' space* ( "keep-alive"i %{ parser->flags |= F_CONNECTION_KEEP_ALIVE; } | "close"i %{ parser->flags |= F_CONNECTION_CLOSE; })
-                      | "Content-Length"i space* ':' space* length+
-                      | header_field space* ':' space* header_value ) crlf;
-    status          = ( text -- "\r" -- "\n" )*;
-    code            = digit >{ mark = p; } %{ if (parser->status_code > 0) { parser->status_code *= 10; } parser->status_code += (*mark - '0'); };
-    request         = method " " url " " version;
-    status_code     = ( code{3} " " status ) >{ MARK(status); } ${ STAT(status); } %{ CALL(status); };
-    response        = version " " status_code;
-    start           = request | response;
-    headers         = header* >{ NTFY(headers_begin); } %{ NTFY(headers_complete); parser->headers_complete = 1; };
-    body            = any* >{ MARK(body); } ${ STAT(body); parser->ragel_content_length++; } %{ CALL(body); };
-    message         = start crlf headers crlf body;
-    main           := message >{ NTFY(message_begin); } %{ if (parser->ragel_content_length < parser->content_length) { fbreak; } else { NTFY(message_complete); } };
+    crlf         = "\r" "\n";
+    control      = cntrl | 127;
+    safe         = "$" | "-" | "_" | ".";
+    tspecials    = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\\" | "\"" | "/" | "[" | "]" | "?" | "=" | "{" | "}" | space | "\t";
+    token        = ( ^control & ^tspecials )+;
+    fragment     = token;
+    arg          = token >{ MARK(arg); } ${ STAT(arg); } %{ CALL(arg); };
+    args         = arg ( "/" arg )* "/"?;
+    text         = ( ^control | space )+;
+    field        = token -- "&";
+    var_field    = field >{ FILD(var); } ${ STAT(var_field); } %{ CALL(var_field); };
+    var_value    = ( field | zlen ) >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
+    var          = var_field "="? var_value;
+    vars         = ( var ( "&" var )* "&"? ); #>{ MARK(query); } ${ STAT(query); } %{ CALL(query); };
+    major        = "1" %{ parser->http_major = '1' - '0'; };
+    minor        = "0" %{ parser->http_minor = '0' - '0'; } | "1" %{ parser->http_minor = '1' - '0'; };
+    version      = ( "HTTP" "/" major "." minor ); #>{ MARK(version); } ${ STAT(version); } %{ CALL(version); };
+    method       = ( "GET"  %{ parser->method = HTTP_GET; } | "POST" %{ parser->method = HTTP_POST; } | ( upper | digit | safe )+ ); #>{ MARK(method); } ${ STAT(method); } %{ CALL(method); };
+    path         = ( "/"? args? ); #>{ MARK(path); } ${ STAT(path); } %{ CALL(path); };
+    url          = ( path ( "?" vars? )? ( "#" fragment? )? ) >{ MARK(url); } ${ STAT(url); } %{ CALL(url); };
+    length       = digit >{ mark = p; } %{ if (parser->content_length > 0) { parser->content_length *= 10; } parser->content_length += (*mark - '0'); };
+    header_field = token >{ if (!parser->headers_complete) { FILD(header); } } ${ STAT(header_field); } %{ CALL(header_field); };
+    header_value = ( ^space any* ) >{ VALU(header); } ${ STAT(header_value); } %{ CALL(header_value); };
+    header       = ( "Connection"i space* ':' space* ( "keep-alive"i %{ parser->flags |= F_CONNECTION_KEEP_ALIVE; } | "close"i %{ parser->flags |= F_CONNECTION_CLOSE; })
+                   | "Content-Length"i space* ':' space* length+
+                   | header_field space* ':' space* header_value ) crlf;
+    status       = ( text -- "\r" -- "\n" )*;
+    code         = digit >{ mark = p; } %{ if (parser->status_code > 0) { parser->status_code *= 10; } parser->status_code += (*mark - '0'); };
+    request      = method " " url " " version;
+    status_code  = ( code{3} " " status ) >{ MARK(status); } ${ STAT(status); } %{ CALL(status); };
+    response     = version " " status_code;
+    start        = request | response;
+    headers      = header* >{ NTFY(headers_begin); } %{ NTFY(headers_complete); parser->headers_complete = 1; };
+    body         = any* >{ MARK(body); } ${ STAT(body); parser->ragel_content_length++; } %{ CALL(body); };
+    message      = start crlf headers crlf body;
+    main        := message >{ NTFY(message_begin); } %{ if (parser->ragel_content_length < parser->content_length) { fbreak; } else { NTFY(message_complete); } };
+    write data;
 }%%
-
-%% write data;
 
 void http_parser_init(http_parser *parser, enum http_parser_type type) {
     int cs = 0;
@@ -75,10 +71,10 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     const char *header_field_mark = NULL;
     const char *header_value_mark = NULL;
     const char *body_mark = NULL;
-    const char *version_mark = NULL;
-    const char *method_mark = NULL;
-    const char *query_mark = NULL;
-    const char *path_mark = NULL;
+//    const char *version_mark = NULL;
+//    const char *method_mark = NULL;
+//    const char *query_mark = NULL;
+//    const char *path_mark = NULL;
     const char *arg_mark = NULL;
     const char *var_field_mark = NULL;
     const char *var_value_mark = NULL;
@@ -87,10 +83,10 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     if (cs == parser->header_field_state) header_field_mark = p;
     if (cs == parser->header_value_state) header_value_mark = p;
     if (cs == parser->body_state) body_mark = p;
-    if (cs == parser->version_state) version_mark = p;
-    if (cs == parser->method_state) method_mark = p;
-    if (cs == parser->query_state) query_mark = p;
-    if (cs == parser->path_state) path_mark = p;
+//    if (cs == parser->version_state) version_mark = p;
+//    if (cs == parser->method_state) method_mark = p;
+//    if (cs == parser->query_state) query_mark = p;
+//    if (cs == parser->path_state) path_mark = p;
     if (cs == parser->arg_state) arg_mark = p;
     if (cs == parser->var_field_state) var_field_mark = p;
     if (cs == parser->var_value_state) var_value_mark = p;
@@ -100,10 +96,10 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     CALL(header_field);
     CALL(header_value);
     CALL(body);
-    CALL(version);
-    CALL(method);
-    CALL(query);
-    CALL(path);
+//    CALL(version);
+//    CALL(method);
+//    CALL(query);
+//    CALL(path);
     CALL(arg);
     CALL(var_field);
     CALL(var_value);
