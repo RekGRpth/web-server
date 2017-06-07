@@ -75,7 +75,7 @@ int parser_on_header_field(http_parser *parser, const char *at, size_t length) {
     int error = 0;
     request_t *request = (request_t *)parser->data;
     if (request->state == STATE_VALUE) if ((error = xbuf_cat(&request->xbuf, "\",\"") <= 0)) { ERROR("xbuf_cat\n"); return error; }
-    if ((error = xbuf_ncat(&request->xbuf, at, length) <= 0)) { ERROR("xbuf_ncat\n"); return error; }
+    if (length > 0) if ((error = xbuf_ncat(&request->xbuf, at, length) <= 0)) { ERROR("xbuf_ncat\n"); return error; }
     request->state = STATE_FIELD;
     return error;
 }
@@ -85,7 +85,7 @@ int parser_on_header_value(http_parser *parser, const char *at, size_t length) {
     int error = 0;
     request_t *request = (request_t *)parser->data;
     if (request->state == STATE_FIELD) if ((error = xbuf_cat(&request->xbuf, "\":\"") <= 0)) { ERROR("xbuf_cat\n"); return error; }
-    if ((error = xbuf_ncat(&request->xbuf, at, length) <= 0)) { ERROR("xbuf_ncat\n"); return error; }
+    if (length > 0) if ((error = xbuf_ncat(&request->xbuf, at, length) <= 0)) { ERROR("xbuf_ncat\n"); return error; }
     request->state = STATE_VALUE;
     return error;
 }
