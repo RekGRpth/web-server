@@ -4,10 +4,12 @@ CFLAGS+=-O0 -g
 RFLAGS+=-C -T0
 else
 CFLAGS+=-O3 -s
-RFLAGS+=-C -G2
+#RFLAGS+=-C -G2
+RFLAGS+=-C -T0
 endif
 
 http_parser.o: http_parser.c http_parser.h Makefile
+#	$(CC) $(CFLAGS) -E $< -o $@.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 http_parser.c: http_parser.rl.c Makefile

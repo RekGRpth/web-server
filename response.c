@@ -8,7 +8,7 @@
     "Content-Length: %d"CRLF \
     "Connection: keep-alive"CRLF
 
-#define STATUS "HTTP/%d.%d %d %s"CRLF
+#define STATUS "HTTP/%d.%d %s"CRLF
 
 int response_write(client_t *client, char *body, int length) {
 //    DEBUG("client=%p, body(%i)=%.*s\n", client, length, length, body);
@@ -21,15 +21,15 @@ int response_write(client_t *client, char *body, int length) {
     char headers[headers_length];
     if ((error = snprintf(headers, headers_length, HEADERS, length) - headers_length + 1)) { ERROR("snprintf\n"); return error; }
     int code = HTTP_STATUS_OK;
-    int status_length = sizeof(STATUS) - 5;
+    int status_length = sizeof(STATUS) - 4;
 //    DEBUG("status_length=%i\n", status_length);
     const char *status_str = http_status_str(code);
     status_length += strlen(status_str);
 //    DEBUG("status_length=%i\n", status_length);
-    for (int number = code; number /= 10; status_length++);
+//    for (int number = code; number /= 10; status_length++);
 //    DEBUG("status_length=%i\n", status_length);
     char status[status_length];
-    if ((error = snprintf(status, status_length, STATUS, client->parser.http_major, client->parser.http_minor, code, status_str) - status_length + 1)) { ERROR("snprintf:%s\n", status); return error; }
+    if ((error = snprintf(status, status_length, STATUS, client->parser.http_major, client->parser.http_minor, status_str) - status_length + 1)) { ERROR("snprintf:%s\n", status); return error; }
     const uv_buf_t bufs[] = {
         {.base = status, .len = status_length - 1},
         {.base = headers, .len = headers_length - 1},

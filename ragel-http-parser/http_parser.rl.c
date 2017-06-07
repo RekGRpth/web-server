@@ -156,16 +156,15 @@ static const char *method_strings[] = {
 #undef XX
 };
 
-const char *http_method_str (enum http_method m) {
+const char *http_method_str(enum http_method m) {
     return ELEM_AT(method_strings, m, "<unknown>");
 }
 
-static const char *status_strings[] = {
-#define XX(num, name, string) #string,
+const char *http_status_str(enum http_status s) {
+    switch (s) {
+#define XX(num, name, string) case HTTP_STATUS_##name: return #num " " #string;
     HTTP_STATUS_MAP(XX)
 #undef XX
-};
-
-const char *http_status_str (enum http_status s) {
-    return ELEM_AT(status_strings, s, "<unknown>");
+        default: return "<unknown>";
+    }
 }
