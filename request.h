@@ -9,12 +9,15 @@ typedef struct postgres_t postgres_t;
 #include "client.h"
 #include "postgres.h"
 
+typedef enum state_t { STATE_OPEN, STATE_FIELD, STATE_VALUE, STATE_CLOSE } state_t;
+
 typedef struct request_t {
     client_t *client;
     postgres_t *postgres;
     pointer_t server_pointer;
     pointer_t client_pointer;
     xbuf_t xbuf;
+    state_t state;
 } request_t;
 
 request_t *request_init(client_t *client);
