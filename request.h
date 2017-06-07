@@ -6,7 +6,6 @@
 typedef struct postgres_t postgres_t;
 
 #include "xbuffer.h" // xbuf_*
-//#include "context.h"
 #include "client.h"
 #include "postgres.h"
 

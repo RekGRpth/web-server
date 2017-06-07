@@ -1,11 +1,7 @@
 #include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
-#include <uv.h> // uv_*
 #include "request.h"
 #include "macros.h" // DEBUG, ERROR
 #include "xbuffer.h" // xbuf_*
-#include "postgres.h"
-#include "server.h"
-#include "client.h"
 
 request_t *request_init(client_t *client) {
 //    DEBUG("client=%p\n", client);

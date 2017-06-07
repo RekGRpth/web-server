@@ -1,9 +1,6 @@
 #include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
-#include <uv.h> // uv_*
 #include "response.h"
 #include "macros.h" // DEBUG, ERROR
-#include "parser.h"
-#include "client.h"
 
 #define CRLF "\r\n"
 

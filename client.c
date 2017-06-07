@@ -1,11 +1,7 @@
 #include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
-#include <uv.h> // uv_*
 #include "client.h"
-#include "queue.h" // queue_*
 #include "macros.h" // DEBUG, ERROR
 #include "request.h"
-#include "parser.h"
-#include "server.h"
 
 void client_on_connect(uv_stream_t *server, int status) { // void (*uv_connection_cb)(uv_stream_t* server, int status)
 //    DEBUG("server=%p, status=%i\n", server, status);

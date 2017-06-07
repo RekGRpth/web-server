@@ -3,7 +3,6 @@
 
 #include <uv.h> // uv_*
 #include "queue.h" // queue_*
-//#include "context.h"
 
 typedef struct server_t {
     queue_t postgres_queue;

@@ -3,14 +3,7 @@
 
 #include <uv.h> // uv_*
 #include "queue.h" // queue_*
-
-#ifdef RAGEL_HTTP_PARSER
-#   include "ragel-http-parser/http_parser.h"
-#else
-#   include "nodejs-http-parser/http_parser.h"
-#endif
-
-//#include "context.h"
+#include "parser.h"
 
 enum {
   UV_CLOSING              = 0x01,   /* uv_close() called but not finished. */

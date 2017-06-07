@@ -1,8 +1,16 @@
 #ifndef _PARSER_H
 #define _PARSER_H
 
+typedef struct client_t client_t;
+
 #include <uv.h> // uv_*
-//#include "context.h"
+
+#ifdef RAGEL_HTTP_PARSER
+#   include "ragel-http-parser/http_parser.h"
+#else
+#   include "nodejs-http-parser/http_parser.h"
+#endif
+
 #include "client.h"
 
 void parser_init(client_t *client);

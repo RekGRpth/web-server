@@ -6,7 +6,6 @@
 
 typedef struct request_t request_t;
 
-//#include "context.h"
 #include "server.h"
 #include "request.h"
 
