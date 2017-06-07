@@ -27,6 +27,7 @@ void request_free(request_t *request) {
     pointer_remove(&request->server_pointer);
     pointer_remove(&request->client_pointer);
     if (request->postgres) if (postgres_cancel(request->postgres)) ERROR("postgres_cancel\n");
+    xbuf_free(&request->xbuf);
     free(request);
 }
 
