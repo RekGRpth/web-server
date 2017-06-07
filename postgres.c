@@ -108,30 +108,14 @@ void postgres_error(PGresult *result, postgres_t *postgres) {
     ERROR("%s", message);
     if (postgres_socket(postgres)) { ERROR("postgres_socket\n"); return; }
     request_t *request = postgres->request;
-    if (postgres_response(request, HTTP_STATUS_OK, message, strlen(message))) ERROR("postgres_write\n");
-/*    if (!request) { ERROR("no_request\n"); return; }
-    client_t *client = request->client;
-//    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
-    if (client->tcp.type != UV_TCP) { ERROR("client=%p, request=%p, client->tcp.type=%i\n", client, request, client->tcp.type); return; }
-    if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, request=%p, client->tcp.flags=%u\n", client, request, client->tcp.flags); return; }
-    if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); return; } // int uv_is_closing(const uv_handle_t* handle)
-    request_free(request);
-    if (response_write(client, HTTP_STATUS_OK, message, strlen(message))) { ERROR("response_write\n"); client_close(client); return; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)*/
+    if (postgres_response(request, sqlstate_code(PQresultErrorField(result, PG_DIAG_SQLSTATE)), message, strlen(message))) ERROR("postgres_response\n"); // char *PQresultErrorField(const PGresult *res, int fieldcode)
 }
 
 void postgres_success(PGresult *result, postgres_t *postgres) {
 //    DEBUG("result=%p, postgres=%p\n", result, postgres);
     request_t *request = postgres->request;
-//    if (!request) { ERROR("no_request\n"); return; }
     if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); if (request) request_free(request); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
-    if (postgres_response(request, HTTP_STATUS_OK, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) ERROR("postgres_write\n");
-/*    client_t *client = request->client;
-//    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
-    if (client->tcp.type != UV_TCP) { ERROR("client=%p, request=%p, client->tcp.type=%i\n", client, request, client->tcp.type); return; }
-    if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, request=%p, client->tcp.flags=%u\n", client, request, client->tcp.flags); return; }
-    if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); return; } // int uv_is_closing(const uv_handle_t* handle)
-    request_free(request);
-    if (response_write(client, HTTP_STATUS_OK, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) { ERROR("response_write\n"); client_close(client); return; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)*/
+    if (postgres_response(request, HTTP_STATUS_OK, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) ERROR("postgres_response\n");
 }
 
 int postgres_response(request_t *request, enum http_status code, char *body, int length) {
@@ -198,4 +182,61 @@ int postgres_process(server_t *server) {
     if ((error = !PQsendQuery(postgres->conn, "select to_json(now());"))) { ERROR("PQsendQuery:%s", PQerrorMessage(postgres->conn)); request_free(request); return error; } // int PQsendQuery(PGconn *conn, const char *command); char *PQerrorMessage(const PGconn *conn)
     if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { ERROR("uv_poll_start\n"); request_free(request); return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
     return error;
+}
+
+enum http_status sqlstate_code(char *sqlstate) {
+    switch (sqlstate[0]) {
+        case '0': switch(sqlstate[1]) {
+            case '8': return HTTP_STATUS_SERVICE_UNAVAILABLE;
+            case 'L': return HTTP_STATUS_FORBIDDEN;
+            case 'P': return HTTP_STATUS_FORBIDDEN;
+        } break;
+        case '2': switch(sqlstate[1]) {
+            case '3': switch(sqlstate[2]) {
+                case '5': switch(sqlstate[3]) {
+                    case '0': switch(sqlstate[4]) {
+                        case '3': return HTTP_STATUS_CONFLICT;
+                        case '5': return HTTP_STATUS_CONFLICT;
+                    } break;
+                } break;
+            } break;
+            case '8': return HTTP_STATUS_FORBIDDEN;
+        } break;
+        case '4': switch(sqlstate[1]) {
+            case '2': switch(sqlstate[2]) {
+                case '5': switch(sqlstate[3]) {
+                    case '0': switch(sqlstate[4]) {
+                        case '1': return HTTP_STATUS_UNAUTHORIZED;
+                    } break;
+                } break;
+                case '8': switch(sqlstate[3]) {
+                    case '8': switch(sqlstate[4]) {
+                        case '3': return HTTP_STATUS_NOT_FOUND;
+                    } break;
+                } break;
+                case 'P': switch(sqlstate[3]) {
+                    case '0': switch(sqlstate[4]) {
+                        case '1': return HTTP_STATUS_NOT_FOUND;
+                    } break;
+                } break;
+            } break;
+            case '8': return HTTP_STATUS_FORBIDDEN;
+        } break;
+        case '5': switch(sqlstate[1]) {
+            case '3': return HTTP_STATUS_SERVICE_UNAVAILABLE;
+            case '4': return HTTP_STATUS_PAYLOAD_TOO_LARGE;
+        } break;
+        case 'P': switch(sqlstate[1]) {
+            case '0': switch(sqlstate[2]) {
+                case '0': switch(sqlstate[3]) {
+                    case '0': switch(sqlstate[4]) {
+                        case '1': return HTTP_STATUS_BAD_REQUEST;
+                        case '2': return HTTP_STATUS_NO_RESPONSE;
+                    } break;
+                } break;
+            } break;
+            case '8': return HTTP_STATUS_FORBIDDEN;
+        } break;
+    }
+    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 }

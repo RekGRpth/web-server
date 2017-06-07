@@ -24,5 +24,6 @@ int postgres_push(postgres_t *postgres);
 int postgres_pop(postgres_t *postgres);
 int postgres_cancel(postgres_t *postgres);
 int postgres_process(server_t *server);
+enum http_status sqlstate_code(char *sqlstate);
 
 #endif // _POSTGRES_H
