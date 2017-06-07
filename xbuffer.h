@@ -1,11 +1,7 @@
 #ifndef _XBUFFER_H
 #define _XBUFFER_H
 
-#include <errno.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h> // FILE
 
 typedef struct {
     char *base;

@@ -1,5 +1,9 @@
+#include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
 #include <sys/sysctl.h> // sysctl, CTL_NET, NET_CORE, NET_CORE_SOMAXCONN
+#include <uv.h> // uv_*
 #include "server.h"
+#include "queue.h" // queue_*
+#include "macros.h" // DEBUG, ERROR
 #include "client.h"
 #include "postgres.h"
 #include "request.h"

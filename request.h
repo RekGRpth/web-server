@@ -1,7 +1,22 @@
 #ifndef _REQUEST_H
 #define _REQUEST_H
 
-#include "context.h"
+#include <uv.h> // uv_*
+
+typedef struct postgres_t postgres_t;
+
+#include "xbuffer.h" // xbuf_*
+//#include "context.h"
+#include "client.h"
+#include "postgres.h"
+
+typedef struct request_t {
+    client_t *client;
+    postgres_t *postgres;
+    pointer_t server_pointer;
+    pointer_t client_pointer;
+    xbuf_t xbuf;
+} request_t;
 
 request_t *request_init(client_t *client);
 void request_free(request_t *request);

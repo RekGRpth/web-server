@@ -1,7 +1,12 @@
+#include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
+#include <postgresql/libpq-fe.h> // PQ*, PG*
+#include <uv.h> // uv_*
 #include "postgres.h"
+#include "macros.h" // DEBUG, ERROR
 #include "response.h"
 #include "request.h"
 #include "client.h"
+#include "server.h"
 
 postgres_t *postgres_init_and_connect(uv_loop_t *loop, char *conninfo) {
 //    DEBUG("loop=%p, conninfo=%s\n", loop, conninfo);

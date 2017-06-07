@@ -1,4 +1,8 @@
+#include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
+#include <netinet/in.h>  // sockaddr_in
+#include <uv.h> // uv_*
 #include "main.h"
+#include "macros.h" // DEBUG, ERROR
 #include "server.h"
 
 int main(int argc, char **argv) {

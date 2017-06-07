@@ -1,4 +1,8 @@
+#include <errno.h>
+#include <stdarg.h> // va_start, va_end
+#include <stdlib.h> // malloc, free
 #include "xbuffer.h"
+#include "macros.h"
 
 xbuf_t *xbuf_init(xbuf_t *xbuf) {
     xbuf->stream = open_memstream(&xbuf->base, &xbuf->len);

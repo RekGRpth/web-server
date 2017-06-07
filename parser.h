@@ -1,7 +1,9 @@
 #ifndef _PARSER_H
 #define _PARSER_H
 
-#include "context.h"
+#include <uv.h> // uv_*
+//#include "context.h"
+#include "client.h"
 
 void parser_init(client_t *client);
 void parser_init_or_client_close(client_t *client);

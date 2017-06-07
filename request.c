@@ -1,5 +1,11 @@
+#include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
+#include <uv.h> // uv_*
 #include "request.h"
+#include "macros.h" // DEBUG, ERROR
+#include "xbuffer.h" // xbuf_*
 #include "postgres.h"
+#include "server.h"
+#include "client.h"
 
 request_t *request_init(client_t *client) {
 //    DEBUG("client=%p\n", client);
@@ -8,6 +14,7 @@ request_t *request_init(client_t *client) {
     if (uv_is_closing((const uv_handle_t *)&client->tcp)) { ERROR("uv_is_closing\n"); return NULL; } // int uv_is_closing(const uv_handle_t* handle)
     request_t *request = (request_t *)malloc(sizeof(request_t));
     if (!request) { ERROR("malloc\n"); return NULL; }
+    if (!xbuf_init(&request->xbuf)) { ERROR("xbuf_init\n"); request_free(request); return NULL; }
     request->client = client;
     request->postgres = NULL;
     pointer_init(&request->server_pointer);

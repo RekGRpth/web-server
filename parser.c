@@ -1,4 +1,6 @@
+#include <uv.h> // uv_*
 #include "parser.h"
+#include "macros.h" // DEBUG, ERROR
 #include "postgres.h"
 #include "client.h"
 #include "request.h"
