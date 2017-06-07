@@ -20,14 +20,9 @@ int response_write(client_t *client, enum http_status code, char *body, int leng
     for (int number = length; number /= 10; headers_length++);
     char headers[headers_length];
     if ((error = snprintf(headers, headers_length, HEADERS, length) - headers_length + 1)) { ERROR("snprintf\n"); return error; }
-//    int code = HTTP_STATUS_OK;
     int status_length = sizeof(STATUS) - 4;
-//    DEBUG("status_length=%i\n", status_length);
     const char *status_str = http_status_str(code);
     status_length += strlen(status_str);
-//    DEBUG("status_length=%i\n", status_length);
-//    for (int number = code; number /= 10; status_length++);
-//    DEBUG("status_length=%i\n", status_length);
     char status[status_length];
     if ((error = snprintf(status, status_length, STATUS, client->parser.http_major, client->parser.http_minor, status_str) - status_length + 1)) { ERROR("snprintf:%s\n", status); return error; }
     const uv_buf_t bufs[] = {
