@@ -67,9 +67,7 @@ int parser_on_message_begin(http_parser *parser) { // typedef int (*http_cb) (ht
     if ((error = !parser->data)) { ERROR("request_init\n"); return error; }
     request_t *request = (request_t *)parser->data;
     if ((error = xbuf_cat(&request->xbuf, "{") <= 0)) { ERROR("xbuf_cat\n"); return error; }
-//    DEBUG("sock=%s:%i, peer=%s:%i\n", client->server_ip, client->server_port, client->client_ip, client->client_port);
-    if ((error = xbuf_xcat(&request->xbuf, "\"environment\":{\"server_ip\":\"%s\",\"server_port\":\"%i\",\"client_ip\":\"%s\",\"client_port\":\"%i\",},",
-        client->server_ip, client->server_port, client->client_ip, client->client_port) <= 0)) { ERROR("xbuf_cat\n"); return error; }
+    if ((error = xbuf_xcat(&request->xbuf, "\"environment\":{\"Server\":\"%s:%i\",\"Client\":\"%s:%i\",},", client->server_ip, client->server_port, client->client_ip, client->client_port) <= 0)) { ERROR("xbuf_cat\n"); return error; }
     return error;
 }
 
