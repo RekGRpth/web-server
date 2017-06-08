@@ -23,8 +23,9 @@
     text         = ( ^control | space )+;
     field        = token -- "&";
     var_field    = field >{ FILD(var); } ${ STAT(var_field); } %{ CALL(var_field); };
-    var_value    = ( field | zlen ) >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
-    var          = ( var_field "=" var_value ) | var_field;
+    var_value    = field >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
+    var_null     = zlen >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
+    var          = var_field ( "=" var_value | "="? var_null );
     vars         = ( var ( "&" var )* "&"? ) >{ NTFY(vars_begin); } %{ NTFY(vars_complete); };
     major        = "1" %{ parser->http_major = '1' - '0'; };
     minor        = "0" %{ parser->http_minor = '0' - '0'; } | "1" %{ parser->http_minor = '1' - '0'; };
