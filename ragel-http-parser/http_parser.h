@@ -290,7 +290,6 @@ struct http_parser {
   void *data; /* A pointer to get hook to the "connection" or "socket" object */
 
     ///////////////////////////////// RAGEL /////////////////////////////////
-    int status_state;
     int url_state;
     int arg_state;
     int var_field_state;
@@ -319,8 +318,6 @@ struct http_parser_settings {
     ///////////////////////////////// RAGEL /////////////////////////////////
     http_cb      on_url_begin;
     http_cb      on_url_complete;
-    http_cb      on_status_begin;
-    http_cb      on_status_complete;
     http_cb      on_args_begin;
     http_cb      on_arg_begin;
     http_data_cb on_arg;

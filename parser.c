@@ -5,7 +5,6 @@
 static const http_parser_settings parser_settings = {
     .on_message_begin = parser_on_message_begin, // http_cb
     .on_url = parser_on_url, // http_data_cb
-    .on_status = parser_on_status, // http_data_cb
     .on_header_field = parser_on_header_field, // http_data_cb
     .on_header_value = parser_on_header_value, // http_data_cb
     .on_headers_complete = parser_on_headers_complete, // http_cb
@@ -16,8 +15,6 @@ static const http_parser_settings parser_settings = {
 #ifdef RAGEL_HTTP_PARSER
     .on_url_begin = parser_on_url_begin, // http_cb
     .on_url_complete = parser_on_url_complete, // http_cb
-    .on_status_begin = parser_on_status_begin, // http_cb
-    .on_status_complete = parser_on_status_complete, // http_cb
     .on_args_begin = parser_on_args_begin, // http_cb
     .on_arg_begin = parser_on_arg_begin, // http_cb
     .on_arg = parser_on_arg, // http_data_cb
@@ -78,11 +75,6 @@ int parser_on_message_begin(http_parser *parser) { // typedef int (*http_cb) (ht
 
 int parser_on_url(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
 //    DEBUG("url(%li)=%.*s\n", length, (int)length, at);
-    return 0;
-}
-
-int parser_on_status(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
-//    DEBUG("status(%li)=%.*s\n", length, (int)length, at);
     return 0;
 }
 
@@ -150,18 +142,6 @@ int parser_on_url_begin(http_parser *parser) { // typedef int (*http_cb) (http_p
 }
 
 int parser_on_url_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-//    DEBUG("\n");
-    int error = 0;
-    return error;
-}
-
-int parser_on_status_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
-//    DEBUG("\n");
-    int error = 0;
-    return error;
-}
-
-int parser_on_status_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
 //    DEBUG("\n");
     int error = 0;
     return error;
