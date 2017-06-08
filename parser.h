@@ -30,10 +30,6 @@ int parser_on_message_complete(http_parser *parser); // typedef int (*http_cb) (
 int parser_on_chunk_header(http_parser *parser); // typedef int (*http_cb) (http_parser*)
 int parser_on_chunk_complete(http_parser *parser); // typedef int (*http_cb) (http_parser*)
 #ifdef RAGEL_HTTP_PARSER
-//int parser_on_version(http_parser *parser, const char *at, size_t length); // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length)
-//int parser_on_method(http_parser *parser, const char *at, size_t length); // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length)
-//int parser_on_query(http_parser *parser, const char *at, size_t length); // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length)
-//int parser_on_path(http_parser *parser, const char *at, size_t length); // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length)
 int parser_on_url_begin(http_parser *parser); // typedef int (*http_cb) (http_parser*)
 int parser_on_url_complete(http_parser *parser); // typedef int (*http_cb) (http_parser*)
 int parser_on_status_begin(http_parser *parser); // typedef int (*http_cb) (http_parser*)

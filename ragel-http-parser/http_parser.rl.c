@@ -11,135 +11,6 @@
 #define STAT(FOR) { if (FOR##_mark) { parser->FOR##_state = cs; } }
 
 %%{
-    machine rfc2396; # https://tools.ietf.org/html/rfc2396
-    lowalpha      = lower;
-    upalpha       = upper;
-    alphanum      = alnum; # alpha | digit
-    hex           = xdigit;
-    escaped       = "%" hex hex;
-    mark          = "-" | "_" | "." | "!" | "~" | "*" | "'" | "(" | ")";
-    unreserved    = alphanum | mark;
-    reserved      = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" | "$" | ",";
-    pchar         = unreserved | escaped | ":" | "@" | "&" | "=" | "+" | "$" | ",";
-    rel_segment   = ( unreserved | escaped | ";" | "@" | "&" | "=" | "+" | "$" | "," )+;
-    userinfo      = ( unreserved | escaped | ";" | ":" | "&" | "=" | "+" | "$" | "," )*;
-    reg_name      = ( unreserved | escaped | "$" | "," | ";" | ":" | "@" | "&" | "=" | "+" )+;
-    uric_no_slash = unreserved | escaped | ";" | "?" | ":" | "@" | "&" | "=" | "+" | "$" | ",";
-    uric          = reserved | unreserved | escaped;
-    opaque_part   = uric_no_slash uric*;
-    fragment      = uric*;
-    query         = uric*;
-    param         = pchar*;
-    segment       = param ( ";" param )*;
-    path_segments = segment ( "/" segment )*;
-    abs_path      = "/"  path_segments;
-    rel_path      = rel_segment abs_path?;
-    port          = digit*;
-    IPv4address   = digit+ "." digit+ "." digit+ "." digit+;
-    toplabel      = alpha | alpha ( alphanum | "-" )* alphanum;
-    domainlabel   = alphanum | alphanum ( alphanum | "-" )* alphanum;
-    hostname      = ( domainlabel "." )* toplabel "."?;
-    host          = hostname | IPv4address;
-    hostport      = host ( ":" port )?;
-    server        = ( ( userinfo "@" )? hostport )?;
-    authority     = server | reg_name;
-    scheme        = alpha ( alpha | digit | "+" | "-" | "." )*;
-    net_path      = "//" authority abs_path?;
-    hier_part     = ( net_path | abs_path ) ( "?" query )?;
-    path          = ( abs_path | opaque_part )?;
-    relativeURI   = ( net_path | abs_path | rel_path ) ( "?" query )?;
-    absoluteURI   = scheme ":" ( hier_part | opaque_part );
-    URI_reference = ( absoluteURI | relativeURI )? ( "#" fragment )?;
-}%%
-
-%%{
-    machine rfc3986; # https://tools.ietf.org/html/rfc3986
-    ALPHA         = alpha; # UPALPHA | LOALPHA
-    DIGIT         = digit; # any US-ASCII digit "0".."9"
-    HEXDIG        = xdigit; # Hexadecimal numeric characters
-    sub_delims    = "!" | "$" | "&" | "'" | "(" | ")" | "*" | "+" | "," | ";" | "=";
-    gen_delims    = ":" | "/" | "?" | "#" | "[" | "]" | "@";
-    reserved      = gen_delims | sub_delims;
-    unreserved    = ALPHA | DIGIT | "-" | "." | "_" | "~";
-    pct_encoded   = "%" HEXDIG HEXDIG;
-    pchar         = unreserved | pct_encoded | sub_delims | ":" | "@";
-    fragment      = ( pchar | "/" | "?" )*;
-    query         = ( pchar | "/" | "?" )*;
-    segment       = pchar*;
-    segment_nz    = pchar+;
-    segment_nz_nc = ( unreserved | pct_encoded | sub_delims | "@" )+; # non-zero-length segment without any colon ":"
-    path_empty    = zlen; # zero characters
-    path_rootless = segment_nz ( "/" segment )*; # begins with a segment
-    path_noscheme = segment_nz_nc ( "/" segment )*; # begins with a non-colon segment
-    path_absolute = "/" path_rootless?; # begins with "/" but not "//"
-    path_abempty  = ( "/" segment )*; # begins with "/" or is empty
-    path          = path_abempty | path_absolute | path_noscheme | path_rootless | path_empty;
-    reg_name      = ( unreserved | pct_encoded | sub_delims )*;
-    dec_octet     = DIGIT | ( "1" .. "9" ) DIGIT | "1" DIGIT DIGIT | "2" ( "0" .. "4" ) DIGIT | "25" ( "0" .. "5" ); # 0-255
-    IPv4address   = dec_octet "." dec_octet "." dec_octet "." dec_octet;
-    h16           = HEXDIG{1,4};
-    ls32          = ( h16 ":" h16 ) | IPv4address;
-    IPv6address   =                              ( h16 ":" ){6} ls32
-                  |                         "::" ( h16 ":" ){5} ls32
-                  | [                 h16 ] "::" ( h16 ":" ){4} ls32
-                  | [ ( h16 ":" ){1,} h16 ] "::" ( h16 ":" ){3} ls32
-                  | [ ( h16 ":" ){2,} h16 ] "::" ( h16 ":" ){2} ls32
-                  | [ ( h16 ":" ){3,} h16 ] "::"   h16 ":"      ls32
-                  | [ ( h16 ":" ){4,} h16 ] "::"                ls32
-                  | [ ( h16 ":" ){5,} h16 ] "::"                h16
-                  | [ ( h16 ":" ){6,} h16 ] "::";
-    IPvFuture     = "v" HEXDIG+ "." ( unreserved | sub_delims | ":" )+;
-    IP_literal    = "[" ( IPv6address | IPvFuture  ) "]";
-    port          = DIGIT*;
-    host          = IP_literal | IPv4address | reg_name;
-    userinfo      = ( unreserved | pct_encoded | sub_delims | ":" )*;
-    authority     = ( userinfo "@" )? host ( ":" port )?;
-    scheme        = ALPHA ( ALPHA | DIGIT | "+" | "-" | "." )*;
-    relative_part = "//" authority path_abempty | path_absolute | path_noscheme | path_empty;
-    relative_ref  = relative_part ( "?" query )? ( "#" fragment )?;
-    hier_part     = "//" authority path_abempty | path_absolute | path_rootless | path_empty;
-    absolute_URI  = scheme ":" hier_part ( "?" query )?;
-    URI           = absolute_URI ( "#" fragment )?;
-    URI_reference = URI | relative_ref;
-}%%
-
-%%{
-    machine rfc2616; # https://tools.ietf.org/html/rfc2616
-    OCTET        = any; # any 8-bit sequence of data
-    CHAR         = ascii; # any US-ASCII character (octets 0 - 127)
-    UPALPHA      = upper; # any US-ASCII uppercase letter "A".."Z"
-    LOALPHA      = lower; # any US-ASCII lowercase letter "a".."z"
-    ALPHA        = alpha; # UPALPHA | LOALPHA
-    DIGIT        = digit; # any US-ASCII digit "0".."9"
-    CTL          = cntrl | 127; # any US-ASCII control character (octets 0 - 31) and DEL (127)
-    CR           = "\r"; # US-ASCII CR, carriage return (13)
-    LF           = "\n"; # US-ASCII LF, linefeed (10)
-    SP           = " "; # US-ASCII SP, space (32)
-    HT           = "\t"; # US-ASCII HT, horizontal-tab (9)
-    QT           = "\""; # US-ASCII double-quote mark (34)
-    CRLF         = CR LF; # end-of-line marker for all protocol elements except the entity-body
-    LWS          = CRLF? ( SP | HT )+; # header field values can be folded onto multiple lines if the continuation line begins with a space or horizontal tab (LWS can be replaced with single SP before interpreting)
-    TEXT         = ^CTL | LWS; # any OCTET except CTLs, but including LWS (LWS must be replaced with single SP before interpreting)
-    HEX          = xdigit; # Hexadecimal numeric characters
-    separators   = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\\" | "\"" | "/" | "[" | "]" | "?" | "=" | "{" | "}" | SP | HT;
-    token        = ( CHAR - CTL - separators )+;
-    ctext        = TEXT - "(" - ")"; # any TEXT excluding "(" and ")"
-    qdtext       = TEXT - "\""; # any TEXT except "\""
-    quoted_pair  = "\\" CHAR;
-    quoted_string = "\"" (qdtext | quoted_pair )* "\"";
-    HTTP_Version = "HTTP" "/" DIGIT+ "." DIGIT+;
-
-    #http_URL     = "http:" "//" host ( ":" port )? ( abs_path ( "?" query )? )?;
-    #start_line   = Request_Line | Status_Line;
-    field_name   = token;
-    field_content = TEXT* | (token | separators | quoted_string)*; # either *TEXT or combinations of token, separators, and quoted-string
-    field_value  = ( field_content | LWS )*;
-    message_header = field_name ":" field_value?;
-    #generic_message = start_line (message_header CRLF)* CRLF message_body?;
-    #HTTP_message = Request | Response; # HTTP/1.1 messages
-}%%
-
-%%{
     machine http_parser;
     crlf         = "\r" "\n";
     lws          = crlf? ( " " | "\t" )+;
@@ -148,9 +19,6 @@
     tspecials    = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\\" | "\"" | "/" | "[" | "]" | "?" | "=" | "{" | "}" | " " | "\t";
     token        = ( ascii - control - tspecials )+;
     text         = ( any - control ) | lws;
-#    qdtext       = text - "\"";
-#    qpair        = "\\" ascii;
-#    quoted       = "\"" (qdtext | qpair )* "\"";
     content      = ( any - control )* | (token | tspecials | ( "\"" ( ( any - control - "\"" ) | ( "\\" ascii ) )* "\"" ) )*;
     fragment     = token;
     arg          = token >{ MARK(arg); } ${ STAT(arg); } %{ CALL(arg); };
@@ -207,22 +75,16 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     const char *header_field_mark = NULL;
     const char *header_value_mark = NULL;
     const char *body_mark = NULL;
-//    const char *version_mark = NULL;
-//    const char *method_mark = NULL;
-//    const char *query_mark = NULL;
-//    const char *path_mark = NULL;
     const char *arg_mark = NULL;
     const char *var_field_mark = NULL;
     const char *var_value_mark = NULL;
     if (cs == parser->url_state) url_mark = p;
     if (cs == parser->status_state) status_mark = p;
-    if (cs == parser->header_field_state) header_field_mark = p;
-    if (cs == parser->header_value_state) header_value_mark = p;
+    if (!parser->headers_complete) { 
+        if (cs == parser->header_field_state) header_field_mark = p;
+        if (cs == parser->header_value_state) header_value_mark = p;
+    }
     if (cs == parser->body_state) body_mark = p;
-//    if (cs == parser->version_state) version_mark = p;
-//    if (cs == parser->method_state) method_mark = p;
-//    if (cs == parser->query_state) query_mark = p;
-//    if (cs == parser->path_state) path_mark = p;
     if (cs == parser->arg_state) arg_mark = p;
     if (cs == parser->var_field_state) var_field_mark = p;
     if (cs == parser->var_value_state) var_value_mark = p;
@@ -234,10 +96,6 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
         CALE(header_value);
     }
     CALE(body);
-//    CALE(version);
-//    CALE(method);
-//    CALE(query);
-//    CALE(path);
     CALE(arg);
     CALE(var_field);
     CALE(var_value);

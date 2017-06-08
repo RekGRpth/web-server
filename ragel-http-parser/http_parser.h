@@ -295,10 +295,6 @@ struct http_parser {
     int header_field_state;
     int header_value_state;
     int body_state;
-//    int version_state;
-//    int method_state;
-//    int query_state;
-//    int path_state;
     int arg_state;
     int var_field_state;
     int var_value_state;
@@ -321,10 +317,6 @@ struct http_parser_settings {
   http_cb      on_chunk_header;
   http_cb      on_chunk_complete;
     ///////////////////////////////// RAGEL /////////////////////////////////
-//    http_data_cb on_version;
-//    http_data_cb on_method;
-//    http_data_cb on_query;
-//    http_data_cb on_path;
     http_cb      on_url_begin;
     http_cb      on_url_complete;
     http_cb      on_status_begin;
