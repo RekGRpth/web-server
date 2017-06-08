@@ -9,6 +9,7 @@
 #define VALU(FOR) { if (!FOR##_value_mark) { FOR##_value_mark = p; FOR##_field_mark = NULL; } NTFY(FOR##_value_begin); }
 #define NTFY(FOR) { if (settings->on_##FOR) { settings->on_##FOR(parser); } }
 #define STAT(FOR) { if (FOR##_mark) { parser->FOR##_state = cs; } }
+#define INIT(FOR) const char *FOR##_mark = (cs == parser->FOR##_state ? p : NULL)
 
 %%{
     machine http_parser;
@@ -70,23 +71,23 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     const char *pe = data + len;
     const char *eof = pe;
     const char *mark = NULL;
-    const char *url_mark = (cs == parser->url_state ? p : NULL);
-    const char *status_mark = (cs == parser->status_state ? p : NULL);
-    const char *header_field_mark = (cs == parser->header_field_state && !parser->headers_complete ? p : NULL);
-    const char *header_value_mark = (cs == parser->header_value_state && !parser->headers_complete ? p : NULL);
-    const char *body_mark = (cs == parser->body_state ? p : NULL);
-    const char *arg_mark = (cs == parser->arg_state ? p : NULL);
-    const char *var_field_mark = (cs == parser->var_field_state ? p : NULL);
-    const char *var_value_mark = (cs == parser->var_value_state ? p : NULL);
+    INIT(status);
+    INIT(url);
+    INIT(arg);
+    INIT(var_field);
+    INIT(var_value);
+    INIT(header_field);
+    INIT(header_value);
+    INIT(body);
     %% write exec;
-    CALE(url);
     CALE(status);
-    if (!parser->headers_complete) CALE(header_field);
-    if (!parser->headers_complete) CALE(header_value);
-    CALE(body);
+    CALE(url);
     CALE(arg);
     CALE(var_field);
     CALE(var_value);
+    if (!parser->headers_complete) CALE(header_field);
+    if (!parser->headers_complete) CALE(header_value);
+    CALE(body);
     parser->state = cs;
     return p - data;
 }

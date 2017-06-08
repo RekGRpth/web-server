@@ -290,14 +290,14 @@ struct http_parser {
   void *data; /* A pointer to get hook to the "connection" or "socket" object */
 
     ///////////////////////////////// RAGEL /////////////////////////////////
-    int url_state;
     int status_state;
-    int header_field_state;
-    int header_value_state;
-    int body_state;
+    int url_state;
     int arg_state;
     int var_field_state;
     int var_value_state;
+    int header_field_state;
+    int header_value_state;
+    int body_state;
     unsigned short headers_complete : 1;
     uint64_t ragel_content_length;
 };
