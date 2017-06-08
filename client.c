@@ -9,6 +9,13 @@ void client_on_connect(uv_stream_t *server, int status) { // void (*uv_connectio
     client_t *client = client_init(server);
     if (!client) { ERROR("client_init\n"); return; }
     if (uv_accept(server, (uv_stream_t *)&client->tcp)) { ERROR("uv_accept\n"); client_free(client); return; } // int uv_accept(uv_stream_t* server, uv_stream_t* client)
+    struct sockaddr_in sockname, peername; int socklen = sizeof(struct sockaddr), peerlen = sizeof(struct sockaddr);
+    if (uv_tcp_getsockname(&client->tcp, (struct sockaddr *)&sockname, &socklen)) { ERROR("uv_tcp_getsockname\n"); client_close(client); return; } // int uv_tcp_getsockname(const uv_tcp_t* handle, struct sockaddr* name, int* namelen)
+    if (uv_tcp_getpeername(&client->tcp, (struct sockaddr *)&peername, &peerlen)) { ERROR("uv_tcp_getpeername\n"); client_close(client); return; } // int uv_tcp_getpeername(const uv_tcp_t* handle, struct sockaddr* name, int* namelen)
+    client->server_port = ntohs(sockname.sin_port); client->client_port = ntohs(peername.sin_port);
+    if (uv_ip4_name(&sockname, client->server_ip, sizeof(client->server_ip))) { ERROR("uv_ip4_name\n"); client_close(client); return; } //int uv_ip4_name(const struct sockaddr_in* src, char* dst, size_t size)
+    if (uv_ip4_name(&peername, client->client_ip, sizeof(client->client_ip))) { ERROR("uv_ip4_name\n"); client_close(client); return; } //int uv_ip4_name(const struct sockaddr_in* src, char* dst, size_t size)
+//    DEBUG("sock=%s:%i, peer=%s:%i\n", client->server_ip, client->server_port, client->client_ip, client->client_port);
     parser_init(client);
     if (uv_read_start((uv_stream_t *)&client->tcp, client_on_alloc, client_on_read)) { ERROR("uv_read_start\n"); client_close(client); return; } // int uv_read_start(uv_stream_t* stream, uv_alloc_cb alloc_cb, uv_read_cb read_cb)
 }
@@ -55,7 +62,7 @@ void client_on_close(uv_handle_t *handle) { // void (*uv_close_cb)(uv_handle_t* 
 
 void client_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
 //    DEBUG("handle=%p, suggested_size=%li, buf=%p\n", handle, suggested_size, buf);
-    suggested_size = 8;
+//    suggested_size = 8;
 //    suggested_size = 16;
 //    suggested_size = 128;
     buf->base = (char *)malloc(suggested_size);
@@ -66,7 +73,7 @@ void client_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) 
 }
 
 void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
-    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
+//    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
 //    DEBUG("nread=%li\n", nread);
     client_t *client = (client_t *)stream->data;
     if (nread == UV_EOF) { /*ERROR("client=%p, nread=UV_EOF(%li)\n", client, nread); */parser_init_or_client_close(client); }

@@ -31,6 +31,10 @@ typedef struct client_t {
     http_parser parser;
     pointer_t server_pointer;
     queue_t request_queue;
+    char server_ip[16];
+    char client_ip[16];
+    int server_port;
+    int client_port;
 } client_t;
 
 void client_on_connect(uv_stream_t *server, int status); // void (*uv_connection_cb)(uv_stream_t* server, int status)
