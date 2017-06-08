@@ -36,8 +36,8 @@
     path         = "/"? args?;
     url          = ( path ( "?" vars? )? ( "#" fragment? )? ) >{ MARK(url); } ${ STAT(url); } %{ CALL(url); };
     length       = digit >{ mark = p; } %{ if (parser->content_length > 0) { parser->content_length *= 10; } parser->content_length += (*mark - '0'); };
-    header_field = token >{ if (!parser->headers_complete) { FILD(header); } } ${ STAT(header_field); } %{ CALL(header_field); };
-    header_value = ( content | lws )* >{ if (!parser->headers_complete) { VALU(header); } } ${ STAT(header_value); } %{ CALL(header_value); };
+    header_field = token >{ FILD(header); } ${ STAT(header_field); } %{ CALL(header_field); };
+    header_value = ( content | lws )* >{ VALU(header); } ${ STAT(header_value); } %{ CALL(header_value); };
     header       = ( "Connection"i ": " ( "keep-alive"i %{ parser->flags |= F_CONNECTION_KEEP_ALIVE; } | "close"i %{ parser->flags |= F_CONNECTION_CLOSE; })
                    | "Content-Length"i ": " length+
                    | header_field ": " header_value ) crlf;
@@ -70,31 +70,19 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     const char *pe = data + len;
     const char *eof = pe;
     const char *mark = NULL;
-    const char *url_mark = NULL;
-    const char *status_mark = NULL;
-    const char *header_field_mark = NULL;
-    const char *header_value_mark = NULL;
-    const char *body_mark = NULL;
-    const char *arg_mark = NULL;
-    const char *var_field_mark = NULL;
-    const char *var_value_mark = NULL;
-    if (cs == parser->url_state) url_mark = p;
-    if (cs == parser->status_state) status_mark = p;
-    if (!parser->headers_complete) { 
-        if (cs == parser->header_field_state) header_field_mark = p;
-        if (cs == parser->header_value_state) header_value_mark = p;
-    }
-    if (cs == parser->body_state) body_mark = p;
-    if (cs == parser->arg_state) arg_mark = p;
-    if (cs == parser->var_field_state) var_field_mark = p;
-    if (cs == parser->var_value_state) var_value_mark = p;
+    const char *url_mark = (cs == parser->url_state ? p : NULL);
+    const char *status_mark = (cs == parser->status_state ? p : NULL);
+    const char *header_field_mark = (cs == parser->header_field_state && !parser->headers_complete ? p : NULL);
+    const char *header_value_mark = (cs == parser->header_value_state && !parser->headers_complete ? p : NULL);
+    const char *body_mark = (cs == parser->body_state ? p : NULL);
+    const char *arg_mark = (cs == parser->arg_state ? p : NULL);
+    const char *var_field_mark = (cs == parser->var_field_state ? p : NULL);
+    const char *var_value_mark = (cs == parser->var_value_state ? p : NULL);
     %% write exec;
     CALE(url);
     CALE(status);
-    if (!parser->headers_complete) { 
-        CALE(header_field);
-        CALE(header_value);
-    }
+    if (!parser->headers_complete) CALE(header_field);
+    if (!parser->headers_complete) CALE(header_value);
     CALE(body);
     CALE(arg);
     CALE(var_field);
