@@ -14,38 +14,38 @@
 %%{
     machine http_parser;
     crlf         = "\r" "\n";
-    lws          = crlf? ( " " | "\t" )+;
+    lws          = crlf? (" " | "\t")+;
     control      = cntrl | 127;
     safe         = "$" | "-" | "_" | ".";
     tspecials    = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\\" | "\"" | "/" | "[" | "]" | "?" | "=" | "{" | "}" | " " | "\t";
-    token        = ( ascii - control - tspecials )+;
-    text         = ( any - control ) | lws;
-    content      = ( any - control )* | (token | tspecials | ( "\"" ( ( any - control - "\"" ) | ( "\\" ascii ) )* "\"" ) )*;
+    token        = (ascii - control - tspecials)+;
+    text         = (any - control) | lws;
+    content      = (any - control)* | (token | tspecials | ("\"" ((any - control - "\"") | ("\\" ascii))* "\""))*;
     fragment     = token;
     arg          = token >{ MARK(arg); } ${ STAT(arg); } %{ CALL(arg); };
-    args         = ( arg ( "/" arg )* "/"? ) >{ NTFY(args_begin); } %{ NTFY(args_complete); };
+    args         = (arg ("/" arg)* "/"?) >{ NTFY(args_begin); } %{ NTFY(args_complete); };
     field        = token - "&";
     var_field    = field >{ FILD(var); } ${ STAT(var_field); } %{ CALL(var_field); };
     var_value    = field >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
     var_null     = zlen >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
-    var          = var_field ( "=" var_value | "="? var_null );
-    vars         = ( var ( "&" var )* "&"? ) >{ NTFY(vars_begin); } %{ NTFY(vars_complete); };
+    var          = var_field ("=" var_value | "="? var_null);
+    vars         = (var ("&" var)* "&"?) >{ NTFY(vars_begin); } %{ NTFY(vars_complete); };
     major        = "1" %{ parser->http_major = '1' - '0'; };
     minor        = "0" %{ parser->http_minor = '0' - '0'; } | "1" %{ parser->http_minor = '1' - '0'; };
     version      = "HTTP" "/" major "." minor;
-    method       = "GET"  %{ parser->method = HTTP_GET; } | "POST" %{ parser->method = HTTP_POST; } | ( upper | digit | safe )+;
+    method       = "GET"  %{ parser->method = HTTP_GET; } | "POST" %{ parser->method = HTTP_POST; } | (upper | digit | safe)+;
     path         = "/"? args?;
-    url          = ( path ( "?" vars? )? ( "#" fragment? )? ) >{ MARK(url); } ${ STAT(url); } %{ CALL(url); };
+    url          = (path ("?" vars?)? ("#" fragment?)?) >{ MARK(url); } ${ STAT(url); } %{ CALL(url); };
     length       = digit >{ mark = p; } %{ if (parser->content_length > 0) { parser->content_length *= 10; } parser->content_length += (*mark - '0'); };
     header_field = token >{ FILD(header); } ${ STAT(header_field); } %{ CALL(header_field); };
-    header_value = ( content | lws )* >{ VALU(header); } ${ STAT(header_value); } %{ CALL(header_value); };
-    header       = ( "Connection"i ": " ( "keep-alive"i %{ parser->flags |= F_CONNECTION_KEEP_ALIVE; } | "close"i %{ parser->flags |= F_CONNECTION_CLOSE; })
+    header_value = (content | lws)* >{ VALU(header); } ${ STAT(header_value); } %{ CALL(header_value); };
+    header       = ("Connection"i ": " ("keep-alive"i %{ parser->flags |= F_CONNECTION_KEEP_ALIVE; } | "close"i %{ parser->flags |= F_CONNECTION_CLOSE; })
                    | "Content-Length"i ": " length+
-                   | header_field ": " header_value ) crlf;
-    status       = ( text - "\r" - "\n" )*;
+                   | header_field ": " header_value) crlf;
+    status       = (text - "\r" - "\n")*;
     code         = digit >{ mark = p; } %{ if (parser->status_code > 0) { parser->status_code *= 10; } parser->status_code += (*mark - '0'); };
     request      = method " " url " " version;
-    status_code  = ( code{3} " " status ) >{ MARK(status); } ${ STAT(status); } %{ CALL(status); };
+    status_code  = (code{3} " " status) >{ MARK(status); } ${ STAT(status); } %{ CALL(status); };
     response     = version " " status_code;
     start        = request | response;
     headers      = header* >{ NTFY(headers_begin); } %{ NTFY(headers_complete); parser->headers_complete = 1; };
