@@ -2,10 +2,11 @@
 #include "http_parser.h"
 #include "../macros.h"
 
-#define CALL(FOR) { if (FOR##_mark) { if (settings->on_##FOR) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; } }
-#define MARK(FOR) { if (!FOR##_mark) { FOR##_mark = p; } }
-#define FILD(FOR) { if (!FOR##_field_mark) { FOR##_field_mark = p; FOR##_value_mark = NULL; } }
-#define VALU(FOR) { if (!FOR##_value_mark) { FOR##_value_mark = p; FOR##_field_mark = NULL; } }
+#define CALL(FOR) { if (FOR##_mark) { if (settings->on_##FOR && p - FOR##_mark > 0) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; NTFY(FOR##_complete); } }
+#define CALE(FOR) { if (FOR##_mark) { if (settings->on_##FOR && p - FOR##_mark > 0) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; } }
+#define MARK(FOR) { if (!FOR##_mark) { FOR##_mark = p; NTFY(FOR##_begin); } }
+#define FILD(FOR) { if (!FOR##_field_mark) { FOR##_field_mark = p; FOR##_value_mark = NULL; NTFY(FOR##_field_begin); } }
+#define VALU(FOR) { if (!FOR##_value_mark) { FOR##_value_mark = p; FOR##_field_mark = NULL; NTFY(FOR##_value_begin); } }
 #define NTFY(FOR) { if (settings->on_##FOR) { settings->on_##FOR(parser); } }
 #define STAT(FOR) { if (FOR##_mark) { parser->FOR##_state = cs; } }
 
@@ -18,13 +19,13 @@
     token        = ( ^control & ^tspecials )+;
     fragment     = token;
     arg          = token >{ MARK(arg); } ${ STAT(arg); } %{ CALL(arg); };
-    args         = arg ( "/" arg )* "/"?;
+    args         = ( arg ( "/" arg )* "/"? ) >{ NTFY(args_begin); } %{ NTFY(args_complete); };
     text         = ( ^control | space )+;
     field        = token -- "&";
     var_field    = field >{ FILD(var); } ${ STAT(var_field); } %{ CALL(var_field); };
     var_value    = ( field | zlen ) >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
-    var          = var_field "="? var_value;
-    vars         = var ( "&" var )* "&"?;
+    var          = ( var_field "=" var_value ) | var_field;
+    vars         = ( var ( "&" var )* "&"? ) >{ NTFY(vars_begin); } %{ NTFY(vars_complete); };
     major        = "1" %{ parser->http_major = '1' - '0'; };
     minor        = "0" %{ parser->http_minor = '0' - '0'; } | "1" %{ parser->http_minor = '1' - '0'; };
     version      = "HTTP" "/" major "." minor;
@@ -91,18 +92,18 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     if (cs == parser->var_field_state) var_field_mark = p;
     if (cs == parser->var_value_state) var_value_mark = p;
     %% write exec;
-    CALL(url);
-    CALL(status);
-    CALL(header_field);
-    CALL(header_value);
-    CALL(body);
-//    CALL(version);
-//    CALL(method);
-//    CALL(query);
-//    CALL(path);
-    CALL(arg);
-    CALL(var_field);
-    CALL(var_value);
+    CALE(url);
+    CALE(status);
+    CALE(header_field);
+    CALE(header_value);
+    CALE(body);
+//    CALE(version);
+//    CALE(method);
+//    CALE(query);
+//    CALE(path);
+    CALE(arg);
+    CALE(var_field);
+    CALE(var_value);
     parser->state = cs;
     return p - data;
 }
