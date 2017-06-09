@@ -17,6 +17,9 @@ typedef struct request_t {
     pointer_t server_pointer;
     pointer_t client_pointer;
     xbuf_t xbuf;
+    int argc;
+    int varc;
+    int hdrc;
 //    state_t state;
 } request_t;
 

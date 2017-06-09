@@ -16,6 +16,9 @@ request_t *request_init(client_t *client) {
     pointer_init(&request->server_pointer);
     pointer_init(&request->client_pointer);
     queue_put_pointer(&client->request_queue, &request->client_pointer);
+    request->argc = 0;
+    request->varc = 0;
+    request->hdrc = 0;
 //    DEBUG("request=%p, client=%p\n", request, client);
 //    DEBUG("client=%p, queue_count(&client->request_queue)=%i\n", client, queue_count(&client->request_queue));
     return request;
