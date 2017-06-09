@@ -111,10 +111,17 @@ void postgres_error(PGresult *result, postgres_t *postgres) {
     if (postgres_response(request, sqlstate_code(PQresultErrorField(result, PG_DIAG_SQLSTATE)), message, strlen(message))) ERROR("postgres_response\n"); // char *PQresultErrorField(const PGresult *res, int fieldcode)
 }
 
+void postgres_error2(char *message, enum http_status code, postgres_t *postgres) {
+    ERROR("%s", message);
+//    if (postgres_socket(postgres)) { ERROR("postgres_socket\n"); return; }
+    request_t *request = postgres->request;
+    if (postgres_response(request, code, message, strlen(message))) ERROR("postgres_response\n"); // char *PQresultErrorField(const PGresult *res, int fieldcode)
+}
+
 void postgres_success(PGresult *result, postgres_t *postgres) {
 //    DEBUG("result=%p, postgres=%p\n", result, postgres);
     request_t *request = postgres->request;
-    if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); if (request) request_free(request); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
+    if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); if (request) postgres_error2("no_data_found\n", HTTP_STATUS_NO_RESPONSE, postgres); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
     if (postgres_response(request, HTTP_STATUS_OK, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) ERROR("postgres_response\n");
 }
 

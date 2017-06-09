@@ -32,6 +32,7 @@ void postgres_listen(postgres_t *postgres);
 int postgres_socket(postgres_t *postgres);
 int postgres_reset(postgres_t *postgres);
 void postgres_error(PGresult *result, postgres_t *postgres);
+void postgres_error2(char *message, enum http_status code, postgres_t *postgres);
 void postgres_success(PGresult *result, postgres_t *postgres);
 int postgres_response(request_t *request, enum http_status code, char *body, int length);
 int postgres_push(postgres_t *postgres);
