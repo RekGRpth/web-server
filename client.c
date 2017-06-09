@@ -73,7 +73,7 @@ void client_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) 
 }
 
 void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
-    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
+//    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
 //    DEBUG("nread=%li\n", nread);
     client_t *client = (client_t *)stream->data;
     if (nread == UV_EOF) { /*ERROR("client=%p, nread=UV_EOF(%li)\n", client, nread); */parser_init_or_client_close(client); }
