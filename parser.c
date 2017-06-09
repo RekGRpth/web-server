@@ -149,7 +149,7 @@ int parser_on_args_begin(http_parser *parser) { // typedef int (*http_cb) (http_
 //    DEBUG("\n");
     int error = 0;
     request_t *request = (request_t *)parser->data;
-    if ((error = xbuf_cat(&request->xbuf, "\"arguments\":[") <= 0)) { ERROR("xbuf_cat\n"); return error; }
+    if ((error = xbuf_cat(&request->xbuf, "\"arguments\":{") <= 0)) { ERROR("xbuf_cat\n"); return error; }
     return error;
 }
 
@@ -167,6 +167,7 @@ int parser_on_arg(http_parser *parser, const char *at, size_t length) { // typed
 //    DEBUG("arg(%li)=%.*s\n", length, (int)length, at);
     int error = 0;
     request_t *request = (request_t *)parser->data;
+    if ((error = xbuf_xcat(&request->xbuf, "%i\":\"", request->argc) <= 0)) { ERROR("xbuf_cat\n"); return error; }
     if ((error = xbuf_ncat(&request->xbuf, at, length) <= 0)) { ERROR("xbuf_ncat\n"); return error; }
     return error;
 }
@@ -183,7 +184,7 @@ int parser_on_args_complete(http_parser *parser) { // typedef int (*http_cb) (ht
 //    DEBUG("\n");
     int error = 0;
     request_t *request = (request_t *)parser->data;
-    if ((error = xbuf_cat(&request->xbuf, "],") <= 0)) { ERROR("xbuf_cat\n"); return error; }
+    if ((error = xbuf_cat(&request->xbuf, "},") <= 0)) { ERROR("xbuf_cat\n"); return error; }
     return error;
 }
 
