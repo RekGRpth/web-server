@@ -2,14 +2,29 @@
 #include "http_parser.h"
 #include "../macros.h"
 
-#define CALL(FOR) { if (FOR##_mark) { if (settings->on_##FOR && p - FOR##_mark > 0) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; NTFY(FOR##_complete); } }
-#define CALE(FOR) { if (FOR##_mark) { if (settings->on_##FOR && p - FOR##_mark > 0) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; } }
-#define MARK(FOR) { if (!FOR##_mark) { FOR##_mark = p; NTFY(FOR##_begin); } }
-#define FILD(FOR) { if (!FOR##_field_mark) { FOR##_field_mark = p; FOR##_value_mark = NULL; NTFY(FOR##_field_begin); } }
-#define VALU(FOR) { if (!FOR##_value_mark) { FOR##_value_mark = p; FOR##_field_mark = NULL; NTFY(FOR##_value_begin); } }
-#define NTFY(FOR) { if (settings->on_##FOR) { settings->on_##FOR(parser); } }
-#define STAT(FOR) { if (FOR##_mark) { parser->FOR##_state = cs; } }
-#define INIT(FOR) const char *FOR##_mark = (cs == parser->FOR##_state ? p : NULL)
+#define INIT_DATA(FOR) const char *FOR##_mark = (cs == parser->FOR##_state ? p : NULL)
+#define INIT_FIELD(FOR) INIT_DATA(FOR##_field)
+#define INIT_VALUE(FOR) INIT_DATA(FOR##_value)
+
+#define BEGIN_DATA(FOR) { if (!FOR##_mark) { FOR##_mark = p; BEGIN_NOTIFY(FOR); } }
+#define BEGIN_FIELD(FOR) { if (!FOR##_field_mark) { FOR##_field_mark = p; FOR##_value_mark = NULL; BEGIN_NOTIFY(FOR##_field); } }
+#define BEGIN_VALUE(FOR) { if (!FOR##_value_mark) { FOR##_value_mark = p; FOR##_field_mark = NULL; BEGIN_NOTIFY(FOR##_value); } }
+
+#define BEGIN_NOTIFY(FOR) NOTIFY(FOR##_begin)
+#define NOTIFY(FOR) { if (settings->on_##FOR) { settings->on_##FOR(parser); } }
+#define COMPLETE_NOTIFY(FOR) NOTIFY(FOR##_complete)
+
+#define STATE_DATA(FOR) { if (FOR##_mark) { parser->FOR##_state = cs; } }
+#define STATE_FIELD(FOR) STATE_DATA(FOR##_field)
+#define STATE_VALUE(FOR) STATE_DATA(FOR##_value)
+
+#define COMPLETE_DATA(FOR) { if (FOR##_mark) { if (settings->on_##FOR && p - FOR##_mark > 0) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; COMPLETE_NOTIFY(FOR); } }
+#define COMPLETE_FIELD(FOR) COMPLETE_DATA(FOR##_field)
+#define COMPLETE_VALUE(FOR) COMPLETE_DATA(FOR##_value)
+
+#define CONTINUE_DATA(FOR) { if (FOR##_mark) { if (settings->on_##FOR && p - FOR##_mark > 0) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; } }
+#define CONTINUE_FIELD(FOR) CONTINUE_DATA(FOR##_field)
+#define CONTINUE_VALUE(FOR) CONTINUE_DATA(FOR##_value)
 
 %%{
     machine http_parser;
@@ -21,31 +36,31 @@
     token        = ascii - control - tspecials;
     text         = any - control;
     fragment     = token+;
-    arg          = token+ >{ MARK(arg); } ${ STAT(arg); } %{ CALL(arg); };
-    args         = (arg ("/" arg)* "/"?) >{ NTFY(args_begin); } %{ NTFY(args_complete); };
+    arg          = token+ >{ BEGIN_DATA(arg); } ${ STATE_DATA(arg); } %{ COMPLETE_DATA(arg); };
+    args         = (arg ("/" arg)* "/"?) >{ BEGIN_NOTIFY(args); } %{ COMPLETE_NOTIFY(args); };
     field        = token - "&";
-    var_field    = field+ >{ FILD(var); } ${ STAT(var_field); } %{ CALL(var_field); };
-    var_value    = field+ >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
-    var_null     = zlen >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
+    var_field    = field+ >{ BEGIN_FIELD(var); } ${ STATE_FIELD(var); } %{ COMPLETE_FIELD(var); };
+    var_value    = field+ >{ BEGIN_VALUE(var); } ${ STATE_VALUE(var); } %{ COMPLETE_VALUE(var); };
+    var_null     = zlen >{ BEGIN_VALUE(var); } ${ STATE_VALUE(var); } %{ COMPLETE_VALUE(var); };
     var          = var_field (("=" var_value) | ("="? var_null));
-    vars         = (var ("&" var)* "&"?) >{ NTFY(vars_begin); } %{ NTFY(vars_complete); };
+    vars         = (var ("&" var)* "&"?) >{ BEGIN_NOTIFY(vars); } %{ COMPLETE_NOTIFY(vars); };
     major        = "1" %{ parser->http_major = '1' - '0'; };
     minor        = "0" %{ parser->http_minor = '0' - '0'; } | "1" %{ parser->http_minor = '1' - '0'; };
     version      = "HTTP/" major "." minor;
     method       = "GET" %{ parser->method = HTTP_GET; } | "POST" %{ parser->method = HTTP_POST; } | (upper | digit | safe)+;
     path         = "/"? args?;
-    url          = (path ("?" vars?)? ("#" fragment?)?) >{ MARK(url); } ${ STAT(url); } %{ CALL(url); };
+    url          = (path ("?" vars?)? ("#" fragment?)?) >{ BEGIN_DATA(url); } ${ STATE_DATA(url); } %{ COMPLETE_DATA(url); };
     length       = digit >{ mark = p; } %{ if (parser->content_length > 0) { parser->content_length *= 10; } parser->content_length += (*mark - '0'); };
-    header_field = token+ >{ FILD(header); } ${ STAT(header_field); } %{ CALL(header_field); };
-    header_value = text* >{ VALU(header); } ${ STAT(header_value); } %{ CALL(header_value); };
+    header_field = token+ >{ BEGIN_FIELD(header); } ${ STATE_FIELD(header); } %{ COMPLETE_FIELD(header); };
+    header_value = text* >{ BEGIN_VALUE(header); } ${ STATE_VALUE(header); } %{ COMPLETE_VALUE(header); };
     header       = ("Connection"i ": " ("keep-alive"i %{ parser->flags |= F_CONNECTION_KEEP_ALIVE; } | "close"i %{ parser->flags |= F_CONNECTION_CLOSE; })
                    | "Content-Length"i ": " length+
                    | header_field ": " header_value) crlf;
     request      = method " " url " " version;
-    headers      = header* >{ NTFY(headers_begin); } %{ NTFY(headers_complete); parser->headers_complete = 1; };
-    body         = any* >{ MARK(body); } ${ STAT(body); parser->ragel_content_length++; } %{ CALL(body); };
+    headers      = header* >{ BEGIN_NOTIFY(headers); } %{ COMPLETE_NOTIFY(headers); parser->headers_complete = 1; };
+    body         = any* >{ BEGIN_DATA(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_DATA(body); };
     message      = request crlf headers crlf body;
-    main        := message >{ NTFY(message_begin); } %{ if (parser->ragel_content_length < parser->content_length) { fbreak; } else { NTFY(message_complete); } };
+    main        := message >{ BEGIN_NOTIFY(message); } %{ if (parser->ragel_content_length < parser->content_length) { fbreak; } else { COMPLETE_NOTIFY(message); } };
     write data;
 }%%
 
@@ -65,21 +80,21 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     const char *pe = data + len;
     const char *eof = pe;
     const char *mark = NULL;
-    INIT(url);
-    INIT(arg);
-    INIT(var_field);
-    INIT(var_value);
-    INIT(header_field);
-    INIT(header_value);
-    INIT(body);
+    INIT_DATA(url);
+    INIT_DATA(arg);
+    INIT_FIELD(var);
+    INIT_VALUE(var);
+    INIT_FIELD(header);
+    INIT_VALUE(header);
+    INIT_DATA(body);
     %% write exec;
-    CALE(url);
-    CALE(arg);
-    CALE(var_field);
-    CALE(var_value);
-    if (!parser->headers_complete) CALE(header_field);
-    if (!parser->headers_complete) CALE(header_value);
-    CALE(body);
+    CONTINUE_DATA(url);
+    CONTINUE_DATA(arg);
+    CONTINUE_FIELD(var);
+    CONTINUE_VALUE(var);
+    if (!parser->headers_complete) CONTINUE_FIELD(header);
+    if (!parser->headers_complete) CONTINUE_VALUE(header);
+    CONTINUE_DATA(body);
     parser->state = cs;
     return p - data;
 }
