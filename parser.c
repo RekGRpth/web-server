@@ -40,6 +40,7 @@ static const http_parser_settings parser_settings = {
 
 void parser_init(client_t *client) {
 //    DEBUG("client=%p\n", client);
+    client->parser.data = NULL;
     http_parser_init(&client->parser, HTTP_REQUEST); // void http_parser_init(http_parser *parser, enum http_parser_type type);
 }
 
@@ -118,6 +119,7 @@ int parser_on_message_complete(http_parser *parser) { // typedef int (*http_cb) 
     if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
     if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
     if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
+//    DEBUG("xbuf(%li)=%.*s\n", request->xbuf.len, (int)request->xbuf.len, request->xbuf.base);
     if ((error = request_push(request))) { ERROR("request_push\n"); return error; }
     return error;
 }
