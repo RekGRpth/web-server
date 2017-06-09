@@ -4,9 +4,9 @@
 
 #define CALL(FOR) { if (FOR##_mark) { if (settings->on_##FOR && p - FOR##_mark > 0) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; NTFY(FOR##_complete); } }
 #define CALE(FOR) { if (FOR##_mark) { if (settings->on_##FOR && p - FOR##_mark > 0) { settings->on_##FOR(parser, FOR##_mark, p - FOR##_mark); } FOR##_mark = NULL; } }
-#define MARK(FOR) { if (!FOR##_mark) { FOR##_mark = p; } NTFY(FOR##_begin); }
-#define FILD(FOR) { if (!FOR##_field_mark) { FOR##_field_mark = p; FOR##_value_mark = NULL; } NTFY(FOR##_field_begin); }
-#define VALU(FOR) { if (!FOR##_value_mark) { FOR##_value_mark = p; FOR##_field_mark = NULL; } NTFY(FOR##_value_begin); }
+#define MARK(FOR) { if (!FOR##_mark) { FOR##_mark = p; NTFY(FOR##_begin); } }
+#define FILD(FOR) { if (!FOR##_field_mark) { FOR##_field_mark = p; FOR##_value_mark = NULL; NTFY(FOR##_field_begin); } }
+#define VALU(FOR) { if (!FOR##_value_mark) { FOR##_value_mark = p; FOR##_field_mark = NULL; NTFY(FOR##_value_begin); } }
 #define NTFY(FOR) { if (settings->on_##FOR) { settings->on_##FOR(parser); } }
 #define STAT(FOR) { if (FOR##_mark) { parser->FOR##_state = cs; } }
 #define INIT(FOR) const char *FOR##_mark = (cs == parser->FOR##_state ? p : NULL)
@@ -18,26 +18,26 @@
     control      = cntrl | 127;
     safe         = "$" | "-" | "_" | ".";
     tspecials    = "(" | ")" | "<" | ">" | "@" | "," | ";" | ":" | "\\" | "\"" | "/" | "[" | "]" | "?" | "=" | "{" | "}" | " " | "\t";
-    token        = (ascii - control - tspecials)+;
-    content      = (any - control)* | (token | tspecials | ("\"" ((any - control - "\"") | ("\\" ascii))* "\""))*;
-    fragment     = token;
-    arg          = token >{ MARK(arg); } ${ STAT(arg); } %{ CALL(arg); };
+    token        = ascii - control - tspecials;
+    text         = any - control;
+    fragment     = token+;
+    arg          = token+ >{ MARK(arg); } ${ STAT(arg); } %{ CALL(arg); };
     args         = (arg ("/" arg)* "/"?) >{ NTFY(args_begin); } %{ NTFY(args_complete); };
     field        = token - "&";
-    var_field    = field >{ FILD(var); } ${ STAT(var_field); } %{ CALL(var_field); };
-    var_value    = field >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
+    var_field    = field+ >{ FILD(var); } ${ STAT(var_field); } %{ CALL(var_field); };
+    var_value    = field+ >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
     var_null     = zlen >{ VALU(var); } ${ STAT(var_value); } %{ CALL(var_value); };
-    var          = var_field ("=" var_value | "="? var_null);
+    var          = var_field (("=" var_value) | ("="? var_null));
     vars         = (var ("&" var)* "&"?) >{ NTFY(vars_begin); } %{ NTFY(vars_complete); };
     major        = "1" %{ parser->http_major = '1' - '0'; };
     minor        = "0" %{ parser->http_minor = '0' - '0'; } | "1" %{ parser->http_minor = '1' - '0'; };
-    version      = "HTTP" "/" major "." minor;
+    version      = "HTTP/" major "." minor;
     method       = "GET" %{ parser->method = HTTP_GET; } | "POST" %{ parser->method = HTTP_POST; } | (upper | digit | safe)+;
     path         = "/"? args?;
     url          = (path ("?" vars?)? ("#" fragment?)?) >{ MARK(url); } ${ STAT(url); } %{ CALL(url); };
     length       = digit >{ mark = p; } %{ if (parser->content_length > 0) { parser->content_length *= 10; } parser->content_length += (*mark - '0'); };
-    header_field = token >{ FILD(header); } ${ STAT(header_field); } %{ CALL(header_field); };
-    header_value = (content | lws)* >{ VALU(header); } ${ STAT(header_value); } %{ CALL(header_value); };
+    header_field = token+ >{ FILD(header); } ${ STAT(header_field); } %{ CALL(header_field); };
+    header_value = text* >{ VALU(header); } ${ STAT(header_value); } %{ CALL(header_value); };
     header       = ("Connection"i ": " ("keep-alive"i %{ parser->flags |= F_CONNECTION_KEEP_ALIVE; } | "close"i %{ parser->flags |= F_CONNECTION_CLOSE; })
                    | "Content-Length"i ": " length+
                    | header_field ": " header_value) crlf;
