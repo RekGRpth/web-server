@@ -5,7 +5,7 @@
 #define CRLF "\r\n"
 
 #define HEADERS \
-    "Content-Type: application/json" CRLF \
+    "Content-Type: application/json; charset=utf-8" CRLF \
     "Content-Length: %d" CRLF \
     "Connection: keep-alive" CRLF
 
