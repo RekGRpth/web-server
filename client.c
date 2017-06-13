@@ -3,6 +3,11 @@
 #include "macros.h" // DEBUG, ERROR
 #include "request.h"
 
+static client_t *client_init(uv_stream_t *server);
+static void client_on_close(uv_handle_t *handle); // void (*uv_close_cb)(uv_handle_t* handle)
+static void client_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);  // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
+static void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf); // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
+
 void client_on_connect(uv_stream_t *server, int status) { // void (*uv_connection_cb)(uv_stream_t* server, int status)
 //    DEBUG("server=%p, status=%i\n", server, status);
     if (status) { ERROR("status=%i\n", status); return; }
@@ -20,7 +25,7 @@ void client_on_connect(uv_stream_t *server, int status) { // void (*uv_connectio
     if (uv_read_start((uv_stream_t *)&client->tcp, client_on_alloc, client_on_read)) { ERROR("uv_read_start\n"); client_close(client); return; } // int uv_read_start(uv_stream_t* stream, uv_alloc_cb alloc_cb, uv_read_cb read_cb)
 }
 
-client_t *client_init(uv_stream_t *server) {
+static client_t *client_init(uv_stream_t *server) {
 //    DEBUG("server=%p\n", server);
     client_t *client = (client_t *)malloc(sizeof(client_t));
     if (!client) { ERROR("malloc\n"); return NULL; }
@@ -54,13 +59,13 @@ void client_close(client_t *client) {
     if (!uv_is_closing(handle)) uv_close(handle, client_on_close); // int uv_is_closing(const uv_handle_t* handle); void uv_close(uv_handle_t* handle, uv_close_cb close_cb)
 }
 
-void client_on_close(uv_handle_t *handle) { // void (*uv_close_cb)(uv_handle_t* handle)
+static void client_on_close(uv_handle_t *handle) { // void (*uv_close_cb)(uv_handle_t* handle)
 //    DEBUG("handle=%p\n", handle);
     client_t *client = (client_t *)handle->data;
     client_free(client);
 }
 
-void client_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
+static void client_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) { // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
 //    DEBUG("handle=%p, suggested_size=%li, buf=%p\n", handle, suggested_size, buf);
 //    suggested_size = 8;
 //    suggested_size = 16;
@@ -72,7 +77,7 @@ void client_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) 
     buf->len = suggested_size;
 }
 
-void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
+static void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) { // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
 //    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
 //    DEBUG("nread=%li\n", nread);
     client_t *client = (client_t *)stream->data;
