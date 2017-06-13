@@ -4,6 +4,10 @@
 #include "macros.h" // DEBUG, ERROR
 #include "postgres.h"
 
+static server_t *server_init(uv_loop_t *loop);
+static void server_free(server_t *server);
+static void server_postgres(uv_loop_t *loop);
+
 void server_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
     uv_loop_t loop;
     if (uv_loop_init(&loop)) { ERROR("uv_loop_init\n"); return; } // int uv_loop_init(uv_loop_t* loop)
@@ -20,7 +24,7 @@ void server_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
     if (uv_run(&loop, UV_RUN_DEFAULT)) { ERROR("uv_run\n"); server_free(server); return; } // int uv_run(uv_loop_t* loop, uv_run_mode mode)
 }
 
-server_t *server_init(uv_loop_t *loop) {
+static server_t *server_init(uv_loop_t *loop) {
     server_t *server = (server_t *)malloc(sizeof(server_t));
     if (!server) { ERROR("malloc\n"); return NULL; }
     queue_init(&server->postgres_queue);
@@ -31,7 +35,7 @@ server_t *server_init(uv_loop_t *loop) {
     return server;
 }
 
-void server_free(server_t *server) {
+static void server_free(server_t *server) {
     ERROR("server=%p\n", server);
     while (!queue_empty(&server->postgres_queue)) postgres_free(pointer_data(queue_get_pointer(&server->postgres_queue), postgres_t, server_pointer));
     while (!queue_empty(&server->client_queue)) client_free(pointer_data(queue_get_pointer(&server->client_queue), client_t, server_pointer));
@@ -39,7 +43,7 @@ void server_free(server_t *server) {
     free(server);
 }
 
-void server_postgres(uv_loop_t *loop) {
+static void server_postgres(uv_loop_t *loop) {
 //    DEBUG("loop=%p\n", loop);
     char *conninfo = getenv("WEBSERVER_POSTGRES_CONNINFO"); // char *getenv(const char *name)
     if (!conninfo) conninfo = "postgresql://localhost?application_name=webserver";
