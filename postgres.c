@@ -3,6 +3,19 @@
 #include "macros.h" // DEBUG, ERROR
 #include "response.h"
 
+static int postgres_connect(uv_loop_t *loop, postgres_t *postgres);
+static void postgres_on_poll(uv_poll_t *handle, int status, int events); // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)
+static void postgres_listen(postgres_t *postgres);
+static int postgres_socket(postgres_t *postgres);
+static int postgres_reset(postgres_t *postgres);
+static void postgres_error(PGresult *result, postgres_t *postgres);
+static void postgres_error2(char *message, enum http_status code, postgres_t *postgres);
+static void postgres_success(PGresult *result, postgres_t *postgres);
+static int postgres_response(request_t *request, enum http_status code, char *body, int length);
+static int postgres_push(postgres_t *postgres);
+static int postgres_pop(postgres_t *postgres);
+static enum http_status sqlstate_code(char *sqlstate);
+
 postgres_t *postgres_init_and_connect(uv_loop_t *loop, char *conninfo) {
 //    DEBUG("loop=%p, conninfo=%s\n", loop, conninfo);
     postgres_t *postgres = (postgres_t *)malloc(sizeof(postgres_t));
@@ -21,7 +34,7 @@ void postgres_free(postgres_t *postgres) {
     free(postgres);
 }
 
-int postgres_connect(uv_loop_t *loop, postgres_t *postgres) {
+static int postgres_connect(uv_loop_t *loop, postgres_t *postgres) {
 //    DEBUG("loop=%p, postgres=%p\n", loop, postgres);
     int error = 0;
     postgres->conn = PQconnectStart(postgres->conninfo); // PGconn *PQconnectStart(const char *conninfo)
@@ -36,7 +49,7 @@ int postgres_connect(uv_loop_t *loop, postgres_t *postgres) {
     return error;
 }
 
-void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)
+static void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)
 //    DEBUG("handle=%p, status=%i, events=%i\n", handle, status, events);
     postgres_t *postgres = (postgres_t *)handle->data;
     if (status) { ERROR("status=%i\n", status); postgres_reset(postgres); return; }
@@ -73,14 +86,14 @@ void postgres_on_poll(uv_poll_t *handle, int status, int events) { // void (*uv_
     }
 }
 
-void postgres_listen(postgres_t *postgres) {
+static void postgres_listen(postgres_t *postgres) {
 //    DEBUG("postgres=%p\n", postgres);
     if (!PQisnonblocking(postgres->conn) && PQsetnonblocking(postgres->conn, 1)) ERROR("PQsetnonblocking:%s", PQerrorMessage(postgres->conn)); // int PQisnonblocking(const PGconn *conn); int PQsetnonblocking(PGconn *conn, int arg); char *PQerrorMessage(const PGconn *conn)
     if (!PQsendQuery(postgres->conn, "listen \"webserver\";")) { ERROR("PQsendQuery:%s", PQerrorMessage(postgres->conn)); return; }// int PQsendQuery(PGconn *conn, const char *command); char *PQerrorMessage(const PGconn *conn)
     if (uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll)) { ERROR("uv_poll_start\n"); return; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
 }
 
-int postgres_socket(postgres_t *postgres) {
+static int postgres_socket(postgres_t *postgres) {
 //    DEBUG("postgres=%p\n", postgres);
     int error = 0;
     if ((error = PQsocket(postgres->conn) < 0)) { ERROR("PQsocket\n"); postgres_reset(postgres); return error; } // int PQsocket(const PGconn *conn)
@@ -88,7 +101,7 @@ int postgres_socket(postgres_t *postgres) {
     return error;
 }
 
-int postgres_reset(postgres_t *postgres) {
+static int postgres_reset(postgres_t *postgres) {
 //    DEBUG("postgres=%p, postgres->request=%p\n", postgres, postgres->request);
     int error = 0;
     if (uv_is_active((uv_handle_t *)&postgres->poll)) if ((error = uv_poll_stop(&postgres->poll))) { ERROR("uv_poll_stop\n"); return error; } // int uv_is_active(const uv_handle_t* handle); int uv_poll_stop(uv_poll_t* poll)
@@ -103,7 +116,7 @@ int postgres_reset(postgres_t *postgres) {
     return error;
 }
 
-void postgres_error(PGresult *result, postgres_t *postgres) {
+static void postgres_error(PGresult *result, postgres_t *postgres) {
     char *message = PQresultErrorMessage(result); // char *PQresultErrorMessage(const PGresult *res)
     ERROR("%s", message);
     if (postgres_socket(postgres)) { ERROR("postgres_socket\n"); return; }
@@ -111,21 +124,21 @@ void postgres_error(PGresult *result, postgres_t *postgres) {
     if (postgres_response(request, sqlstate_code(PQresultErrorField(result, PG_DIAG_SQLSTATE)), message, strlen(message))) ERROR("postgres_response\n"); // char *PQresultErrorField(const PGresult *res, int fieldcode)
 }
 
-void postgres_error2(char *message, enum http_status code, postgres_t *postgres) {
+static void postgres_error2(char *message, enum http_status code, postgres_t *postgres) {
     ERROR("%s", message);
 //    if (postgres_socket(postgres)) { ERROR("postgres_socket\n"); return; }
     request_t *request = postgres->request;
     if (postgres_response(request, code, message, strlen(message))) ERROR("postgres_response\n"); // char *PQresultErrorField(const PGresult *res, int fieldcode)
 }
 
-void postgres_success(PGresult *result, postgres_t *postgres) {
+static void postgres_success(PGresult *result, postgres_t *postgres) {
 //    DEBUG("result=%p, postgres=%p\n", result, postgres);
     request_t *request = postgres->request;
     if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); if (request) postgres_error2("no_data_found\n", HTTP_STATUS_NO_RESPONSE, postgres); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
     if (postgres_response(request, HTTP_STATUS_OK, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) ERROR("postgres_response\n");
 }
 
-int postgres_response(request_t *request, enum http_status code, char *body, int length) {
+static int postgres_response(request_t *request, enum http_status code, char *body, int length) {
     int error = 0;
     if ((error = !request)) { ERROR("no_request\n"); return error; }
     client_t *client = request->client;
@@ -138,7 +151,7 @@ int postgres_response(request_t *request, enum http_status code, char *body, int
     return error;
 }
 
-int postgres_push(postgres_t *postgres) {
+static int postgres_push(postgres_t *postgres) {
 //    DEBUG("postgres=%p, postgres->request=%p\n", postgres, postgres->request);
     int error = 0;
     if ((error = postgres_socket(postgres))) { ERROR("postgres_socket\n"); return error; }
@@ -150,7 +163,7 @@ int postgres_push(postgres_t *postgres) {
     return postgres_process(server);
 }
 
-int postgres_pop(postgres_t *postgres) {
+static int postgres_pop(postgres_t *postgres) {
 //    DEBUG("postgres=%p\n", postgres);
     int error = 0;
     if ((error = postgres_socket(postgres))) { ERROR("postgres_socket\n"); return error; }
@@ -198,7 +211,7 @@ int postgres_process(server_t *server) {
     return error;
 }
 
-enum http_status sqlstate_code(char *sqlstate) {
+static enum http_status sqlstate_code(char *sqlstate) {
     switch (sqlstate[0]) {
         case '0': switch(sqlstate[1]) {
             case '8': return HTTP_STATUS_SERVICE_UNAVAILABLE;
