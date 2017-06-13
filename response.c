@@ -11,6 +11,10 @@
 
 #define STATUS "HTTP/%d.%d %s" CRLF
 
+static void response_on_write(uv_write_t *req, int status); // void (*uv_write_cb)(uv_write_t* req, int status)
+static response_t *response_init();
+static void response_free(response_t *response);
+
 int response_write(client_t *client, enum http_status code, char *body, int length) {
 //    DEBUG("client=%p, body(%i)=%.*s\n", client, length, length, body);
     int error = 0;
@@ -39,7 +43,7 @@ int response_write(client_t *client, enum http_status code, char *body, int leng
     return error;
 }
 
-void response_on_write(uv_write_t *req, int status) { // void (*uv_write_cb)(uv_write_t* req, int status)
+static void response_on_write(uv_write_t *req, int status) { // void (*uv_write_cb)(uv_write_t* req, int status)
 //    DEBUG("req=%p, status=%i\n", req, status);
 //    DEBUG("ECANCELED=%i\n", -ECANCELED);
     if (status) ERROR("status=%i\n", status);
@@ -49,14 +53,14 @@ void response_on_write(uv_write_t *req, int status) { // void (*uv_write_cb)(uv_
     response_free(response);
 }
 
-response_t *response_init() {
+static response_t *response_init() {
     response_t *response = (response_t *)malloc(sizeof(response_t));
     if (!response) { ERROR("malloc\n"); return NULL; }
     response->req.data = (void *)response;
     return response;
 }
 
-void response_free(response_t *response) {
+static void response_free(response_t *response) {
 //    DEBUG("response=%p\n", response);
     free(response);
 }
