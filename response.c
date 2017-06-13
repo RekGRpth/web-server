@@ -34,12 +34,14 @@ int response_write(client_t *client, enum http_status code, char *body, int leng
     };
     response_t *response = response_init();
     if ((error = !response)) { ERROR("response_init\n"); return error; }
+    if ((error = !uv_is_writable((const uv_stream_t*)&client->tcp))) { ERROR("uv_is_writable\n"); response_free(response); client_close(client); return error; } // int uv_is_writable(const uv_stream_t* handle)
     if ((error = uv_write(&response->req, (uv_stream_t *)&client->tcp, bufs, sizeof(bufs) / sizeof(bufs[0]), response_on_write))) { ERROR("uv_write\n"); response_free(response); return error; } // int uv_write(uv_write_t* req, uv_stream_t* handle, const uv_buf_t bufs[], unsigned int nbufs, uv_write_cb cb)
     return error;
 }
 
 void response_on_write(uv_write_t *req, int status) { // void (*uv_write_cb)(uv_write_t* req, int status)
 //    DEBUG("req=%p, status=%i\n", req, status);
+//    DEBUG("ECANCELED=%i\n", -ECANCELED);
     if (status) ERROR("status=%i\n", status);
     client_t *client = (client_t *)req->handle->data;
     parser_init_or_client_close(client);
