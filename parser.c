@@ -34,6 +34,12 @@ static int parser_on_header_field_complete(http_parser *parser); // typedef int 
 static int parser_on_header_value_begin(http_parser *parser); // typedef int (*http_cb) (http_parser*)
 static int parser_on_header_value_complete(http_parser *parser); // typedef int (*http_cb) (http_parser*)
 static int parser_on_body_begin(http_parser *parser); // typedef int (*http_cb) (http_parser*)
+static int parser_on_body_field_begin(http_parser *parser); // typedef int (*http_cb) (http_parser*)
+static int parser_on_body_field(http_parser *parser, const char *at, size_t length); // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length)
+static int parser_on_body_field_complete(http_parser *parser); // typedef int (*http_cb) (http_parser*)
+static int parser_on_body_value_begin(http_parser *parser); // typedef int (*http_cb) (http_parser*)
+static int parser_on_body_value(http_parser *parser, const char *at, size_t length); // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length)
+static int parser_on_body_value_complete(http_parser *parser); // typedef int (*http_cb) (http_parser*)
 static int parser_on_body_complete(http_parser *parser); // typedef int (*http_cb) (http_parser*)
 #endif
 
@@ -69,6 +75,12 @@ static const http_parser_settings parser_settings = {
     .on_header_value_begin = parser_on_header_value_begin, // http_cb
     .on_header_value_complete = parser_on_header_value_complete, // http_cb
     .on_body_begin = parser_on_body_begin, // http_cb
+    .on_body_field_begin = parser_on_body_field_begin, // http_cb
+    .on_body_field = parser_on_body_field, // http_data_cb
+    .on_body_field_complete = parser_on_body_field_complete, // http_cb
+    .on_body_value_begin = parser_on_body_value_begin, // http_cb
+    .on_body_value = parser_on_body_value, // http_data_cb
+    .on_body_value_complete = parser_on_body_value_complete, // http_cb
     .on_body_complete = parser_on_body_complete, // http_cb
 #endif
 };
@@ -336,12 +348,66 @@ static int parser_on_header_value_complete(http_parser *parser) { // typedef int
 static int parser_on_body_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
 //    DEBUG("\n");
     int error = 0;
+    request_t *request = (request_t *)parser->data;
+    if ((error = xbuf_cat(&request->xbuf, ",\"body\":{") <= 0)) { ERROR("xbuf_cat\n"); return error; }
+    return error;
+}
+
+static int parser_on_body_field_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
+//    DEBUG("\n");
+    int error = 0;
+    request_t *request = (request_t *)parser->data;
+    if (request->bodc > 0) if ((error = xbuf_cat(&request->xbuf, ",") <= 0)) { ERROR("xbuf_cat\n"); return error; }
+    if ((error = xbuf_cat(&request->xbuf, "\"") <= 0)) { ERROR("xbuf_cat\n"); return error; }
+    request->bodc++;
+    return error;
+}
+
+static int parser_on_body_field(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
+//    DEBUG("body_field(%li)=%.*s\n", length, (int)length, at);
+    int error = 0;
+    request_t *request = (request_t *)parser->data;
+    if ((error = xbuf_ncat(&request->xbuf, at, length) <= 0)) { ERROR("xbuf_ncat\n"); return error; }
+    return error;
+}
+
+static int parser_on_body_field_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
+//    DEBUG("\n");
+    int error = 0;
+    request_t *request = (request_t *)parser->data;
+    if ((error = xbuf_cat(&request->xbuf, "\":") <= 0)) { ERROR("xbuf_cat\n"); return error; }
+    return error;
+}
+
+static int parser_on_body_value_begin(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
+//    DEBUG("\n");
+    int error = 0;
+    request_t *request = (request_t *)parser->data;
+    if ((error = xbuf_cat(&request->xbuf, "\"") <= 0)) { ERROR("xbuf_cat\n"); return error; }
+    return error;
+}
+
+static int parser_on_body_value(http_parser *parser, const char *at, size_t length) { // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length);
+//    DEBUG("body_value(%li)=%.*s\n", length, (int)length, at);
+    int error = 0;
+    request_t *request = (request_t *)parser->data;
+    if ((error = xbuf_ncat(&request->xbuf, at, length) <= 0)) { ERROR("xbuf_ncat\n"); return error; }
+    return error;
+}
+
+static int parser_on_body_value_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
+//    DEBUG("\n");
+    int error = 0;
+    request_t *request = (request_t *)parser->data;
+    if ((error = xbuf_cat(&request->xbuf, "\"") <= 0)) { ERROR("xbuf_cat\n"); return error; }
     return error;
 }
 
 static int parser_on_body_complete(http_parser *parser) { // typedef int (*http_cb) (http_parser*);
 //    DEBUG("\n");
     int error = 0;
+    request_t *request = (request_t *)parser->data;
+    if ((error = xbuf_cat(&request->xbuf, "}") <= 0)) { ERROR("xbuf_cat\n"); return error; }
     return error;
 }
 #endif

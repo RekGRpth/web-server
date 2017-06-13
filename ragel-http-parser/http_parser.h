@@ -297,6 +297,8 @@ struct http_parser {
     int header_field_state;
     int header_value_state;
     int body_state;
+    int body_field_state;
+    int body_value_state;
     unsigned short headers_complete : 1;
     uint64_t ragel_content_length;
 };
@@ -337,6 +339,12 @@ struct http_parser_settings {
     http_cb      on_header_value_begin;
     http_cb      on_header_value_complete;
     http_cb      on_body_begin;
+    http_cb      on_body_field_begin;
+    http_data_cb on_body_field;
+    http_cb      on_body_field_complete;
+    http_cb      on_body_value_begin;
+    http_data_cb on_body_value;
+    http_cb      on_body_value_complete;
     http_cb      on_body_complete;
 };
 

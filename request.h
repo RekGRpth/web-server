@@ -20,7 +20,7 @@ typedef struct request_t {
     int argc;
     int varc;
     int hdrc;
-//    state_t state;
+    int bodc;
 } request_t;
 
 request_t *request_init(client_t *client);

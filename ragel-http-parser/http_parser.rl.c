@@ -58,8 +58,14 @@
                    | header_field ": " header_value) crlf;
     request      = method " " url " " version;
     headers      = header* >{ BEGIN_NOTIFY(headers); } %{ COMPLETE_NOTIFY(headers); parser->headers_complete = 1; };
-    body         = any* >{ BEGIN_DATA(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_DATA(body); };
-    message      = request crlf headers crlf body;
+    body_field   = field+ >{ BEGIN_FIELD(body); } ${ STATE_FIELD(body); } %{ COMPLETE_FIELD(body); };
+    body_value   = field+ >{ BEGIN_VALUE(body); } ${ STATE_VALUE(body); } %{ COMPLETE_VALUE(body); };
+    body_null    = zlen >{ BEGIN_VALUE(body); } ${ STATE_VALUE(body); } %{ COMPLETE_VALUE(body); };
+    body1        = body_field (("=" body_value) | ("="? body_null));
+    body2        = (body1 ("&" body1)* "&"?) >{ BEGIN_NOTIFY(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_NOTIFY(body); };
+    body3        = zlen >{ BEGIN_NOTIFY(body); } %{ COMPLETE_NOTIFY(body); };
+#    body         = any+ >{ BEGIN_DATA(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_DATA(body); };
+    message      = request crlf headers crlf ( body2 | body3 );
     main        := message >{ BEGIN_NOTIFY(message); } %{ if (parser->ragel_content_length < parser->content_length) { fbreak; } else { COMPLETE_NOTIFY(message); } };
     write data;
 }%%
@@ -87,6 +93,8 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     INIT_FIELD(header);
     INIT_VALUE(header);
     INIT_DATA(body);
+    INIT_FIELD(body);
+    INIT_VALUE(body);
     %% write exec;
     CONTINUE_DATA(url);
     CONTINUE_DATA(arg);
@@ -95,6 +103,8 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     if (!parser->headers_complete) CONTINUE_FIELD(header);
     if (!parser->headers_complete) CONTINUE_VALUE(header);
     CONTINUE_DATA(body);
+    CONTINUE_FIELD(body);
+    CONTINUE_VALUE(body);
     parser->state = cs;
     return p - data;
 }

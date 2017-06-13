@@ -19,6 +19,7 @@ request_t *request_init(client_t *client) {
     request->argc = 0;
     request->varc = 0;
     request->hdrc = 0;
+    request->bodc = 0;
 //    DEBUG("request=%p, client=%p\n", request, client);
 //    DEBUG("client=%p, queue_count(&client->request_queue)=%i\n", client, queue_count(&client->request_queue));
     return request;
