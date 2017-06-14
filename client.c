@@ -2,6 +2,7 @@
 #include "client.h"
 #include "macros.h" // DEBUG, ERROR
 #include "request.h"
+#include "response.h"
 
 static client_t *client_init(uv_stream_t *server);
 static void client_on_close(uv_handle_t *handle); // void (*uv_close_cb)(uv_handle_t* handle)
@@ -81,8 +82,34 @@ static void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *b
 //    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
 //    DEBUG("nread=%li\n", nread);
     client_t *client = (client_t *)stream->data;
-    if (nread == UV_EOF) { /*ERROR("client=%p, nread=UV_EOF(%li)\n", client, nread); */parser_init_or_client_close(client); }
-    else if (nread < 0) { /*ERROR("client=%p, nread=%li\n", client, nread); */client_close(client); }
-    else if ((ssize_t)parser_execute(client, buf->base, nread) < nread) { ERROR("parser_execute\n"); client_close(client); }
+    switch (nread) {
+        case 0: return; // no-op - there's no data to be read, but there might be later
+        case UV_ENOBUFS: if (client_response(client, HTTP_STATUS_PAYLOAD_TOO_LARGE, "payload too large", sizeof("payload too large") - 1)) ERROR("client_response\n"); break;
+        case UV_ECONNRESET: client_close(client); break;
+        case UV_ECONNABORTED: client_close(client); break;
+        case UV_EOF: parser_init_or_client_close(client); break;
+        default: {
+            if (nread < 0) { if (client_response(client, HTTP_STATUS_INTERNAL_SERVER_ERROR, "internal server error", sizeof("internal server error") - 1)) ERROR("client_response\n"); }
+            else {
+                if ((ssize_t)parser_execute(client, buf->base, nread) < nread) { if (client_response(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) ERROR("client_response\n"); }
+                if (HTTP_PARSER_ERRNO(&client->parser)) {
+                    ERROR("parser_execute(%i)%s\n", HTTP_PARSER_ERRNO(&client->parser), http_errno_description(HTTP_PARSER_ERRNO(&client->parser)));
+                    if (client_response(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) ERROR("client_response\n");
+                }
+            }
+        } break;
+    }
+//    if (nread == UV_EOF) { /*ERROR("client=%p, nread=UV_EOF(%li)\n", client, nread); */parser_init_or_client_close(client); }
+//    else if (nread < 0) { /*ERROR("client=%p, nread=%li\n", client, nread); */client_close(client); }
+//    else if ((ssize_t)parser_execute(client, buf->base, nread) < nread) { ERROR("parser_execute\n"); client_close(client); }
     if (buf->base) free(buf->base);
+}
+
+int client_response(client_t *client, enum http_status code, char *body, int length) {
+    int error = 0;
+    if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
+    if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
+    if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
+    if ((error = response_write(client, code, body, length))) { ERROR("response_write\n"); client_close(client); return error; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
+    return error;
 }

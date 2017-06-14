@@ -1,7 +1,6 @@
 #include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
 #include "postgres.h"
 #include "macros.h" // DEBUG, ERROR
-#include "response.h"
 
 static int postgres_connect(uv_loop_t *loop, postgres_t *postgres);
 static void postgres_on_poll(uv_poll_t *handle, int status, int events); // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)
@@ -9,7 +8,7 @@ static void postgres_listen(postgres_t *postgres);
 static int postgres_socket(postgres_t *postgres);
 static int postgres_reset(postgres_t *postgres);
 static void postgres_error(postgres_t *postgres, PGresult *result);
-static void postgres_error2(postgres_t *postgres, enum http_status code, char *message);
+static void postgres_error2(postgres_t *postgres, enum http_status code, char *message, int length);
 static void postgres_success(postgres_t *postgres, PGresult *result);
 static int postgres_response(request_t *request, enum http_status code, char *body, int length);
 static int postgres_push(postgres_t *postgres);
@@ -124,17 +123,17 @@ static void postgres_error(postgres_t *postgres, PGresult *result) {
     if (postgres_response(request, sqlstate_code(PQresultErrorField(result, PG_DIAG_SQLSTATE)), message, strlen(message))) ERROR("postgres_response\n"); // char *PQresultErrorField(const PGresult *res, int fieldcode)
 }
 
-static void postgres_error2(postgres_t *postgres, enum http_status code, char *message) {
+static void postgres_error2(postgres_t *postgres, enum http_status code, char *message, int length) {
     ERROR("%s", message);
 //    if (postgres_socket(postgres)) { ERROR("postgres_socket\n"); return; }
     request_t *request = postgres->request;
-    if (postgres_response(request, code, message, strlen(message))) ERROR("postgres_response\n"); // char *PQresultErrorField(const PGresult *res, int fieldcode)
+    if (postgres_response(request, code, message, length)) ERROR("postgres_response\n");
 }
 
 static void postgres_success(postgres_t *postgres, PGresult *result) {
 //    DEBUG("result=%p, postgres=%p\n", result, postgres);
     request_t *request = postgres->request;
-    if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); if (request) postgres_error2(postgres, HTTP_STATUS_NO_RESPONSE, "no_data_found\n"); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
+    if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); if (request) postgres_error2(postgres, HTTP_STATUS_NO_RESPONSE, "no data found", sizeof("no data found") - 1); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
     if (postgres_response(request, HTTP_STATUS_OK, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) ERROR("postgres_response\n");
 }
 
@@ -142,12 +141,14 @@ static int postgres_response(request_t *request, enum http_status code, char *bo
     int error = 0;
     if ((error = !request)) { ERROR("no_request\n"); return error; }
     client_t *client = request->client;
-//    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
+    request_free(request);
+    if ((error = client_response(client, code, body, length))) { ERROR("client_response\n"); return error; }
+/*//    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
     if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, request=%p, client->tcp.type=%i\n", client, request, client->tcp.type); return error; }
     if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, request=%p, client->tcp.flags=%u\n", client, request, client->tcp.flags); return error; }
     if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
     request_free(request);
-    if ((error = response_write(client, code, body, length))) { ERROR("response_write\n"); client_close(client); return error; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
+    if ((error = response_write(client, code, body, length))) { ERROR("response_write\n"); client_close(client); return error; }*/
     return error;
 }
 
