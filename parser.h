@@ -9,7 +9,7 @@ typedef struct client_t client_t;
 #   include "ragel-http-parser/http_parser.h"
 #else
 #   include "nodejs-http-parser/http_parser.h"
-#endif
+#endif // RAGEL_HTTP_PARSER
 
 #include "client.h"
 

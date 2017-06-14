@@ -41,7 +41,7 @@ static int parser_on_body_value_begin(http_parser *parser); // typedef int (*htt
 static int parser_on_body_value(http_parser *parser, const char *at, size_t length); // typedef int (*http_data_cb) (http_parser*, const char *at, size_t length)
 static int parser_on_body_value_complete(http_parser *parser); // typedef int (*http_cb) (http_parser*)
 static int parser_on_body_complete(http_parser *parser); // typedef int (*http_cb) (http_parser*)
-#endif
+#endif // RAGEL_HTTP_PARSER
 
 static const http_parser_settings parser_settings = {
     .on_message_begin = parser_on_message_begin, // http_cb
@@ -82,7 +82,7 @@ static const http_parser_settings parser_settings = {
     .on_body_value = parser_on_body_value, // http_data_cb
     .on_body_value_complete = parser_on_body_value_complete, // http_cb
     .on_body_complete = parser_on_body_complete, // http_cb
-#endif
+#endif // RAGEL_HTTP_PARSER
 };
 
 void parser_init(client_t *client) {
@@ -410,7 +410,7 @@ static int parser_on_body_complete(http_parser *parser) { // typedef int (*http_
     if ((error = xbuf_cat(&request->xbuf, "}") <= 0)) { ERROR("xbuf_cat\n"); return error; }
     return error;
 }
-#endif
+#endif // RAGEL_HTTP_PARSER
 
 const char *http_status_str(enum http_status s) {
     switch (s) {
