@@ -1,4 +1,4 @@
-CFLAGS+=-Wall -Wextra -Werror -Wno-unused-parameter
+CFLAGS+=-Wall -Wextra -Werror -Wno-unused-parameter -Wno-unused-function
 ifeq (true,$(DEBUG))
     CFLAGS+=-O0 -g
 else
