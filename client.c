@@ -80,7 +80,11 @@ static void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *b
 //    DEBUG("nread=%li\n", nread);
     client_t *client = (client_t *)stream->data;
     if (nread > 0) {
-        if ((ssize_t)parser_execute(client, buf->base, nread) < nread) if (client_error(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) FATAL("client_error\n");
+        ssize_t parsed = (ssize_t)parser_execute(client, buf->base, nread);
+        if (parsed < nread) {
+            ERROR("parsed=%li, nread=%li\n", parsed, nread);
+            if (client_error(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) FATAL("client_error\n");
+        }
         if (HTTP_PARSER_ERRNO(&client->parser)) {
             FATAL("parser_execute(%i)%s\n", HTTP_PARSER_ERRNO(&client->parser), http_errno_description(HTTP_PARSER_ERRNO(&client->parser)));
             if (client_error(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) FATAL("client_error\n");

@@ -199,7 +199,7 @@ int postgres_process(server_t *server) {
     if ((error = postgres_pop(postgres))) { FATAL("postgres_pop\n"); /*request_free(request); */return error; }
 //    if ((error = response_write(request, "hi", sizeof("hi") - 1))) { FATAL("response_write\n"); request_close(request->client); } return error; // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
 //    DEBUG("request=%p, request->client=%p\n", request, request->client);
-//    DEBUG("xbuf(%li)=%.*s\n", request->xbuf.len, (int)request->xbuf.len, request->xbuf.base);
+    DEBUG("xbuf(%li)=%.*s\n", request->xbuf.len, (int)request->xbuf.len, request->xbuf.base);
 //    if ((error = !PQsendQuery(postgres->conn, "select to_json(now());"))) { FATAL("PQsendQuery:%s", PQerrorMessage(postgres->conn)); /*request_free(request); */return error; } // int PQsendQuery(PGconn *conn, const char *command); char *PQerrorMessage(const PGconn *conn)
     const char *command = "SELECT \"web\".\"route\"($1);";
     const Oid paramTypes[] = {JSONOID};

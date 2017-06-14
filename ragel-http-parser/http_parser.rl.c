@@ -62,10 +62,11 @@
     body_value   = field+ >{ BEGIN_VALUE(body); } ${ STATE_VALUE(body); } %{ COMPLETE_VALUE(body); };
     body_null    = zlen >{ BEGIN_VALUE(body); } ${ STATE_VALUE(body); } %{ COMPLETE_VALUE(body); };
     body1        = body_field (("=" body_value) | ("="? body_null));
-    body2        = (body1 ("&" body1)* "&"?) >{ BEGIN_NOTIFY(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_NOTIFY(body); };
-    body3        = zlen >{ BEGIN_NOTIFY(body); } %{ COMPLETE_NOTIFY(body); };
-#    body         = any+ >{ BEGIN_DATA(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_DATA(body); };
-    message      = request crlf headers crlf ( body2 | body3 );
+    body2        = (body1 ("&" body1)* "&"?); #>{ BEGIN_DATA(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_DATA(body); };
+    body3        = zlen; #>{ BEGIN_DATA(body); } %{ COMPLETE_DATA(body); };
+    body4        = (any* - body2); # >{ BEGIN_DATA(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_DATA(body); };
+    body         = (body3 | body2 | body4) >{ BEGIN_DATA(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_DATA(body); };
+    message      = request crlf headers crlf body;
     main        := message >{ BEGIN_NOTIFY(message); } %{ if (parser->ragel_content_length < parser->content_length) { fbreak; } else { COMPLETE_NOTIFY(message); } };
     write data;
 }%%
