@@ -79,24 +79,19 @@ static void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *b
 //    if (nread >= 0) DEBUG("stream=%p, nread=%li, buf->base=%p\n<<\n%.*s\n>>\n", stream, nread, buf->base, (int)nread, buf->base);
 //    DEBUG("nread=%li\n", nread);
     client_t *client = (client_t *)stream->data;
-    switch (nread) {
-        case 0: return; // no-op - there's no data to be read, but there might be later
+    if (nread > 0) {
+        if ((ssize_t)parser_execute(client, buf->base, nread) < nread) if (client_error(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) ERROR("client_error\n");
+        if (HTTP_PARSER_ERRNO(&client->parser)) {
+            ERROR("parser_execute(%i)%s\n", HTTP_PARSER_ERRNO(&client->parser), http_errno_description(HTTP_PARSER_ERRNO(&client->parser)));
+            if (client_error(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) ERROR("client_error\n");
+        }
+    } else switch (nread) {
+        case 0: break; // no-op - there's no data to be read, but there might be later
+        case UV_EOF: /*ERROR("UV_EOF\n"); */parser_init_or_client_close(client); break;
         case UV_ENOBUFS: ERROR("UV_ENOBUFS\n"); if (client_error(client, HTTP_STATUS_PAYLOAD_TOO_LARGE, "payload too large", sizeof("payload too large") - 1)) ERROR("client_error\n"); break;
         case UV_ECONNRESET: ERROR("UV_ECONNRESET\n"); client_close(client); break;
         case UV_ECONNABORTED: ERROR("UV_ECONNABORTED\n"); client_close(client); break;
-        case UV_EOF: /*ERROR("UV_EOF\n"); */parser_init_or_client_close(client); break;
-        default: {
-            if (nread < 0) {
-                ERROR("nread=%li\n", nread);
-                if (client_error(client, HTTP_STATUS_INTERNAL_SERVER_ERROR, "internal server error", sizeof("internal server error") - 1)) ERROR("client_error\n");
-            } else {
-                if ((ssize_t)parser_execute(client, buf->base, nread) < nread) { if (client_error(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) ERROR("client_error\n"); }
-                if (HTTP_PARSER_ERRNO(&client->parser)) {
-                    ERROR("parser_execute(%i)%s\n", HTTP_PARSER_ERRNO(&client->parser), http_errno_description(HTTP_PARSER_ERRNO(&client->parser)));
-                    if (client_error(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) ERROR("client_error\n");
-                }
-            }
-        } break;
+        default: ERROR("nread=%li\n", nread); if (client_error(client, HTTP_STATUS_INTERNAL_SERVER_ERROR, "internal server error", sizeof("internal server error") - 1)) ERROR("client_error\n"); break;
     }
     if (buf->base) free(buf->base);
 }
