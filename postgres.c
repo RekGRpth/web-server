@@ -102,7 +102,7 @@ static int postgres_socket(postgres_t *postgres) {
 }
 
 static int postgres_reset(postgres_t *postgres) {
-    DEBUG("postgres=%p, postgres->request=%p\n", postgres, postgres->request);
+//    DEBUG("postgres=%p, postgres->request=%p\n", postgres, postgres->request);
     int error = 0;
     if (uv_is_active((uv_handle_t *)&postgres->poll)) if ((error = uv_poll_stop(&postgres->poll))) { FATAL("uv_poll_stop\n"); return error; } // int uv_is_active(const uv_handle_t* handle); int uv_poll_stop(uv_poll_t* poll)
     if (postgres->request) if (request_push(postgres->request)) FATAL("request_push\n");
