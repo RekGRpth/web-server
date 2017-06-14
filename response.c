@@ -18,7 +18,7 @@ static void response_free(response_t *response);
 int response_write(client_t *client, enum http_status code, char *body, int length) {
 //    DEBUG("client=%p, body(%i)=%.*s\n", client, length, length, body);
     int error = 0;
-    if (code != HTTP_STATUS_OK) ERROR("code=%s\n", http_status_str(code));
+//    if (code != HTTP_STATUS_OK) ERROR("code=%s\n", http_status_str(code));
 //    if ((error = client->tcp.type != UV_TCP)) { FATAL("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
 //    if ((error = client->tcp.flags > MAX_FLAG)) { FATAL("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
     if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { FATAL("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
