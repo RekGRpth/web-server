@@ -7,9 +7,9 @@ static void postgres_on_poll(uv_poll_t *handle, int status, int events); // void
 static void postgres_listen(postgres_t *postgres);
 static int postgres_socket(postgres_t *postgres);
 static int postgres_reset(postgres_t *postgres);
-static void postgres_error_result(postgres_t *postgres, PGresult *result);
-static void postgres_error_code_message_length(postgres_t *postgres, enum http_status code, char *message, int length);
-static void postgres_success(postgres_t *postgres, PGresult *result);
+static int postgres_error_result(postgres_t *postgres, PGresult *result);
+static int postgres_error_code_message_length(postgres_t *postgres, enum http_status code, char *message, int length);
+static int postgres_success(postgres_t *postgres, PGresult *result);
 static int postgres_response(request_t *request, enum http_status code, char *body, int length);
 static int postgres_push(postgres_t *postgres);
 static int postgres_pop(postgres_t *postgres);
@@ -68,15 +68,16 @@ static void postgres_on_poll(uv_poll_t *handle, int status, int events) { // voi
     if (events & UV_READABLE) {
         if (!PQconsumeInput(postgres->conn)) { FATAL("PQconsumeInput:%s", PQerrorMessage(postgres->conn)); postgres_reset(postgres); return; } // int PQconsumeInput(PGconn *conn); char *PQerrorMessage(const PGconn *conn)
         if (PQisBusy(postgres->conn)) return; // int PQisBusy(PGconn *conn)
+        int error = 0;
         for (PGresult *result; (result = PQgetResult(postgres->conn)); PQclear(result)) switch (PQresultStatus(result)) { // PGresult *PQgetResult(PGconn *conn); void PQclear(PGresult *res); ExecStatusType PQresultStatus(const PGresult *res)
-            case PGRES_TUPLES_OK: postgres_success(postgres, result); break;
-            case PGRES_FATAL_ERROR: ERROR("PGRES_FATAL_ERROR\n"); postgres_error_result(postgres, result); break;
+            case PGRES_TUPLES_OK: if ((error = postgres_success(postgres, result))) FATAL("postgres_success\n"); break;
+            case PGRES_FATAL_ERROR: ERROR("PGRES_FATAL_ERROR\n"); if ((error = postgres_error_result(postgres, result))) FATAL("postgres_error_result\n"); break;
             default: break;
         }
         for (PGnotify *notify; (notify = PQnotifies(postgres->conn)); PQfreemem(notify)) { // PGnotify *PQnotifies(PGconn *conn); void PQfreemem(void *ptr)
             DEBUG("Asynchronous notification \"%s\" with payload \"%s\" received from server process with PID %d.\n", notify->relname, notify->extra, notify->be_pid);
         }
-        if (postgres_push(postgres)) FATAL("postgres_push\n");
+        if (!error) if (postgres_push(postgres)) FATAL("postgres_push\n");
     }
     if (events & UV_WRITABLE) switch (PQflush(postgres->conn)) { // int PQflush(PGconn *conn);
         case 0: /*DEBUG("No data left to send\n"); */if (uv_poll_start(&postgres->poll, UV_READABLE, postgres_on_poll)) FATAL("uv_poll_start\n"); break; // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
@@ -101,7 +102,7 @@ static int postgres_socket(postgres_t *postgres) {
 }
 
 static int postgres_reset(postgres_t *postgres) {
-//    DEBUG("postgres=%p, postgres->request=%p\n", postgres, postgres->request);
+    DEBUG("postgres=%p, postgres->request=%p\n", postgres, postgres->request);
     int error = 0;
     if (uv_is_active((uv_handle_t *)&postgres->poll)) if ((error = uv_poll_stop(&postgres->poll))) { FATAL("uv_poll_stop\n"); return error; } // int uv_is_active(const uv_handle_t* handle); int uv_poll_stop(uv_poll_t* poll)
     if (postgres->request) if (request_push(postgres->request)) FATAL("request_push\n");
@@ -115,27 +116,33 @@ static int postgres_reset(postgres_t *postgres) {
     return error;
 }
 
-static void postgres_error_result(postgres_t *postgres, PGresult *result) {
+static int postgres_error_result(postgres_t *postgres, PGresult *result) {
+    int error = 0;
     char *message = PQresultErrorMessage(result); // char *PQresultErrorMessage(const PGresult *res)
-    ERROR("\n%s", message);
-    if (postgres_socket(postgres)) { FATAL("postgres_socket\n"); return; }
+    FATAL("\n%s", message);
+    if ((error = postgres_socket(postgres))) { FATAL("postgres_socket\n"); return error; }
     request_t *request = postgres->request;
     DEBUG("sqlstate=%s\n", PQresultErrorField(result, PG_DIAG_SQLSTATE));
-    if (postgres_response(request, sqlstate_code(PQresultErrorField(result, PG_DIAG_SQLSTATE)), message, strlen(message))) FATAL("postgres_response\n"); // char *PQresultErrorField(const PGresult *res, int fieldcode)
+    if ((error = postgres_response(request, sqlstate_code(PQresultErrorField(result, PG_DIAG_SQLSTATE)), message, strlen(message)))) { FATAL("postgres_response\n"); return error; }// char *PQresultErrorField(const PGresult *res, int fieldcode)
+    return error;
 }
 
-static void postgres_error_code_message_length(postgres_t *postgres, enum http_status code, char *message, int length) {
+static int postgres_error_code_message_length(postgres_t *postgres, enum http_status code, char *message, int length) {
+    int error = 0;
     ERROR("%s", message);
 //    if (postgres_socket(postgres)) { FATAL("postgres_socket\n"); return; }
     request_t *request = postgres->request;
-    if (postgres_response(request, code, message, length)) FATAL("postgres_response\n");
+    if ((error = postgres_response(request, code, message, length))) { FATAL("postgres_response\n"); return error; }
+    return error;
 }
 
-static void postgres_success(postgres_t *postgres, PGresult *result) {
+static int postgres_success(postgres_t *postgres, PGresult *result) {
 //    DEBUG("result=%p, postgres=%p\n", result, postgres);
+    int error = 0;
     request_t *request = postgres->request;
-    if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); if (request) postgres_error_code_message_length(postgres, HTTP_STATUS_NO_RESPONSE, "no data found", sizeof("no data found") - 1); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
-    if (postgres_response(request, HTTP_STATUS_OK, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) FATAL("postgres_response\n");
+    if ((error = PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0))) { ERROR("no_data_found\n"); if (request) postgres_error_code_message_length(postgres, HTTP_STATUS_NO_RESPONSE, "no data found", sizeof("no data found") - 1); return error; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
+    if ((error = postgres_response(request, HTTP_STATUS_OK, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0)))) { FATAL("postgres_response\n"); return error; }
+    return error;
 }
 
 static int postgres_response(request_t *request, enum http_status code, char *body, int length) {
