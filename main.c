@@ -6,6 +6,7 @@
 #include "server.h"
 
 int main(int argc, char **argv) {
+    for (int i = 0; i < argc; i++) DEBUG("argv[%i]=%s\n", i, argv[i]);
     int error = 0;
     if ((error = uv_replace_allocator(malloc, realloc, calloc, free))) { FATAL("uv_replace_allocator\n"); return error; } // int uv_replace_allocator(uv_malloc_func malloc_func, uv_realloc_func realloc_func, uv_calloc_func calloc_func, uv_free_func free_func)
     int cpu_count; uv_cpu_info_t *cpu_infos;
