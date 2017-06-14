@@ -22,8 +22,6 @@ void client_on_connect(uv_stream_t *stream, int status) { // void (*uv_connectio
     client->server_port = ntohs(sockname.sin_port); client->client_port = ntohs(peername.sin_port);
     if (uv_ip4_name(&sockname, client->server_ip, sizeof(client->server_ip))) { ERROR("uv_ip4_name\n"); client_close(client); return; } //int uv_ip4_name(const struct sockaddr_in* src, char* dst, size_t size)
     if (uv_ip4_name(&peername, client->client_ip, sizeof(client->client_ip))) { ERROR("uv_ip4_name\n"); client_close(client); return; } //int uv_ip4_name(const struct sockaddr_in* src, char* dst, size_t size)
-//    DEBUG("sock=%s:%i, peer=%s:%i\n", client->server_ip, client->server_port, client->client_ip, client->client_port);
-//    parser_init(client);
     if (uv_read_start((uv_stream_t *)&client->tcp, client_on_alloc, client_on_read)) { ERROR("uv_read_start\n"); client_close(client); return; } // int uv_read_start(uv_stream_t* stream, uv_alloc_cb alloc_cb, uv_read_cb read_cb)
 }
 
@@ -33,9 +31,6 @@ static client_t *client_init(uv_stream_t *stream) {
     if (!client) { ERROR("malloc\n"); return NULL; }
     queue_init(&client->request_queue);
     pointer_init(&client->server_pointer);
-//    if (uv_tcp_init(stream->loop, &client->tcp)) { ERROR("uv_tcp_init\n"); client_free(client); return NULL; } // int uv_tcp_init(uv_loop_t* loop, uv_tcp_t* handle)
-//    if (client->tcp.type != UV_TCP) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); client_free(client); return NULL; }
-//    if (client->tcp.flags > MAX_FLAG) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); client_free(client); return NULL; }
     client->tcp.data = (void *)client;
     server_t *server = (server_t *)stream->loop->data;
     queue_put_pointer(&server->client_queue, &client->server_pointer);
