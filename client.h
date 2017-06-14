@@ -37,7 +37,7 @@ typedef struct client_t {
     int client_port;
 } client_t;
 
-void client_on_connect(uv_stream_t *server, int status); // void (*uv_connection_cb)(uv_stream_t* server, int status)
+void client_on_connect(uv_stream_t *stream, int status); // void (*uv_connection_cb)(uv_stream_t* server, int status)
 void client_free(client_t *client);
 void client_close(client_t *client);
 int client_response(client_t *client, enum http_status code, char *body, int length);
