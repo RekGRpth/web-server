@@ -36,9 +36,12 @@ int main(int argc, char **argv) {
     char *webserver_thread_count = getenv("WEBSERVER_THREAD_COUNT"); // char *getenv(const char *name);
     if (webserver_thread_count) thread_count = atoi(webserver_thread_count);
     if (thread_count < 1) thread_count = cpu_count;
-    if (thread_count == 1) { server_on_start((void *)&sock); return 0; }
-    uv_thread_t tid[thread_count];
-    for (int i = 0; i < thread_count; i++) if ((error = uv_thread_create(&tid[i], server_on_start, (void *)&sock))) { ERROR("uv_thread_create\n"); return error; } // int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg)
-    for (int i = 0; i < thread_count; i++) if ((error = uv_thread_join(&tid[i]))) { ERROR("uv_thread_join\n"); return error; } // int uv_thread_join(uv_thread_t *tid)
+    if (thread_count == 1) server_on_start((void *)&sock);
+    else {
+        uv_thread_t tid[thread_count];
+        for (int i = 0; i < thread_count; i++) if ((error = uv_thread_create(&tid[i], server_on_start, (void *)&sock))) { ERROR("uv_thread_create\n"); return error; } // int uv_thread_create(uv_thread_t* tid, uv_thread_cb entry, void* arg)
+        for (int i = 0; i < thread_count; i++) if ((error = uv_thread_join(&tid[i]))) { ERROR("uv_thread_join\n"); return error; } // int uv_thread_join(uv_thread_t *tid)
+    }
+    if ((error = uv_loop_close(&loop))) { ERROR("uv_loop_close\n"); return error; } // int uv_loop_close(uv_loop_t* loop)
     return error;
 }
