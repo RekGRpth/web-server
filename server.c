@@ -22,6 +22,8 @@ void server_on_start(void *arg) { // void (*uv_thread_cb)(void* arg)
     int backlog = SOMAXCONN; if (oldlenp > 0) backlog = oldval[0];
     if (uv_listen((uv_stream_t *)&tcp, backlog, client_on_connect)) { ERROR("uv_listen\n"); server_free(server); return; } // int uv_listen(uv_stream_t* stream, int backlog, uv_connection_cb cb)
     if (uv_run(&loop, UV_RUN_DEFAULT)) { ERROR("uv_run\n"); server_free(server); return; } // int uv_run(uv_loop_t* loop, uv_run_mode mode)
+    if (uv_loop_close(&loop)) { ERROR("uv_loop_close\n"); server_free(server); return; } // int uv_loop_close(uv_loop_t* loop)
+    server_free(server);
 }
 
 static server_t *server_init(uv_loop_t *loop) {
