@@ -8,6 +8,7 @@ static client_t *client_init(uv_stream_t *stream);
 static void client_on_close(uv_handle_t *handle); // void (*uv_close_cb)(uv_handle_t* handle)
 static void client_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf);  // void (*uv_alloc_cb)(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf )
 static void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf); // void (*uv_read_cb)(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf )
+static int client_error(client_t *client, enum http_status code, char *body, int length);
 
 void client_on_connect(uv_stream_t *stream, int status) { // void (*uv_connection_cb)(uv_stream_t* server, int status)
 //    DEBUG("stream=%p, status=%i\n", stream, status);
@@ -71,7 +72,6 @@ static void client_on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t
     buf->base = (char *)malloc(suggested_size);
     client_t *client = (client_t *)handle->data;
     if (!buf->base) { ERROR("malloc\n"); client_close(client); return; }
-//    parser_init(client);
     buf->len = suggested_size;
 }
 
@@ -81,25 +81,32 @@ static void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *b
     client_t *client = (client_t *)stream->data;
     switch (nread) {
         case 0: return; // no-op - there's no data to be read, but there might be later
-        case UV_ENOBUFS: if (client_response(client, HTTP_STATUS_PAYLOAD_TOO_LARGE, "payload too large", sizeof("payload too large") - 1)) ERROR("client_response\n"); break;
-        case UV_ECONNRESET: client_close(client); break;
-        case UV_ECONNABORTED: client_close(client); break;
-        case UV_EOF: parser_init_or_client_close(client); break;
+        case UV_ENOBUFS: ERROR("UV_ENOBUFS\n"); if (client_error(client, HTTP_STATUS_PAYLOAD_TOO_LARGE, "payload too large", sizeof("payload too large") - 1)) ERROR("client_error\n"); break;
+        case UV_ECONNRESET: ERROR("UV_ECONNRESET\n"); client_close(client); break;
+        case UV_ECONNABORTED: ERROR("UV_ECONNABORTED\n"); client_close(client); break;
+        case UV_EOF: /*ERROR("UV_EOF\n"); */parser_init_or_client_close(client); break;
         default: {
-            if (nread < 0) { if (client_response(client, HTTP_STATUS_INTERNAL_SERVER_ERROR, "internal server error", sizeof("internal server error") - 1)) ERROR("client_response\n"); }
-            else {
-                if ((ssize_t)parser_execute(client, buf->base, nread) < nread) { if (client_response(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) ERROR("client_response\n"); }
+            if (nread < 0) {
+                ERROR("nread=%li\n", nread);
+                if (client_error(client, HTTP_STATUS_INTERNAL_SERVER_ERROR, "internal server error", sizeof("internal server error") - 1)) ERROR("client_error\n");
+            } else {
+                if ((ssize_t)parser_execute(client, buf->base, nread) < nread) { if (client_error(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) ERROR("client_error\n"); }
                 if (HTTP_PARSER_ERRNO(&client->parser)) {
                     ERROR("parser_execute(%i)%s\n", HTTP_PARSER_ERRNO(&client->parser), http_errno_description(HTTP_PARSER_ERRNO(&client->parser)));
-                    if (client_response(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) ERROR("client_response\n");
+                    if (client_error(client, HTTP_STATUS_BAD_REQUEST, "bad request", sizeof("bad request") - 1)) ERROR("client_error\n");
                 }
             }
         } break;
     }
-//    if (nread == UV_EOF) { /*ERROR("client=%p, nread=UV_EOF(%li)\n", client, nread); */parser_init_or_client_close(client); }
-//    else if (nread < 0) { /*ERROR("client=%p, nread=%li\n", client, nread); */client_close(client); }
-//    else if ((ssize_t)parser_execute(client, buf->base, nread) < nread) { ERROR("parser_execute\n"); client_close(client); }
     if (buf->base) free(buf->base);
+}
+
+static int client_error(client_t *client, enum http_status code, char *body, int length) {
+    int error = 0;
+    if ((error = uv_read_stop((uv_stream_t *)&client->tcp))) { ERROR("uv_read_stop\n"); return error; } // int uv_read_stop(uv_stream_t*) // ???
+    if ((error = client_response(client, code, body, length))) { ERROR("client_response\n"); return error; }
+    client_close(client); // ???
+    return error;
 }
 
 int client_response(client_t *client, enum http_status code, char *body, int length) {
