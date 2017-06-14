@@ -163,9 +163,9 @@ static int parser_on_message_complete(http_parser *parser) { // typedef int (*ht
     if ((error = xbuf_cat(&request->xbuf, "}") <= 0)) { ERROR("xbuf_cat\n"); return error; }
     client_t *client = request->client;
     client->parser.data = NULL;
-    if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
-    if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
-    if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
+//    if ((error = client->tcp.type != UV_TCP)) { ERROR("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
+//    if ((error = client->tcp.flags > MAX_FLAG)) { ERROR("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
+//    if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { ERROR("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
 //    DEBUG("xbuf(%li)=%.*s\n", request->xbuf.len, (int)request->xbuf.len, request->xbuf.base);
     if ((error = request_push(request))) { ERROR("request_push\n"); return error; }
     return error;
