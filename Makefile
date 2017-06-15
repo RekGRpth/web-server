@@ -6,13 +6,7 @@ else
     CFLAGS+=-O3 -s
 endif
 
-ifeq (true,$(RAGEL))
-    CFLAGS+=-DRAGEL_HTTP_PARSER
-    server: main.o xbuffer.o server.o queue.o postgres.o client.o request.o parser.o response.o ragel-http-parser/http_parser.o
-		$(CC) $(CFLAGS) $+ -luv -lpq -o $@
-    ragel-http-parser/http_parser.o: Makefile
-		$(MAKE) -C ragel-http-parser http_parser.o
-else
+ifeq (false,$(RAGEL))
     CFLAGS+=-DNODEJS_HTTP_PARSER
     ifeq (true,$(DEBUG))
         server: main.o xbuffer.o server.o queue.o postgres.o client.o request.o parser.o response.o nodejs-http-parser/http_parser_g.o
@@ -25,6 +19,12 @@ else
         nodejs-http-parser/http_parser.o: Makefile
 			$(MAKE) -C nodejs-http-parser http_parser.o
     endif
+else
+    CFLAGS+=-DRAGEL_HTTP_PARSER
+    server: main.o xbuffer.o server.o queue.o postgres.o client.o request.o parser.o response.o ragel-http-parser/http_parser.o
+		$(CC) $(CFLAGS) $+ -luv -lpq -o $@
+    ragel-http-parser/http_parser.o: Makefile
+		$(MAKE) -C ragel-http-parser http_parser.o
 endif
 
 %.o: %.c %.h Makefile
