@@ -63,10 +63,9 @@
     body_null    = zlen >{ BEGIN_VALUE(body); } ${ STATE_VALUE(body); } %{ COMPLETE_VALUE(body); };
     body1        = body_field (("=" body_value) | ("="? body_null));
     body2        = body1 ("&" body1)* "&"?;
-    body3        = zlen;
-    body4        = any* - body2;
-    body         = (body3 | body2 | body4) >{ BEGIN_DATA(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_DATA(body); };
-    message      = request crlf headers crlf body;
+    body4        = any+ - body2;
+    body         = (body2 | body4) >{ BEGIN_DATA(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_DATA(body); };
+    message      = request crlf headers crlf (zlen | body);
     main        := message >{ BEGIN_NOTIFY(message); } %{ if (parser->ragel_content_length < parser->content_length) { fbreak; } else { COMPLETE_NOTIFY(message); } };
     write data;
 }%%
