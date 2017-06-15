@@ -1,6 +1,6 @@
-#include "parser.h"
-#include "macros.h" // DEBUG, ERROR
-#include "request.h"
+#include "parser.h" // parser_*
+#include "request.h" // request_t, request_push, request_init
+#include "macros.h" // DEBUG, ERROR, FATAL
 
 static int parser_should_keep_alive(client_t *client);
 static int parser_on_message_begin(http_parser *parser); // typedef int (*http_cb) (http_parser*)

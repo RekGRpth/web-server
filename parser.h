@@ -3,15 +3,14 @@
 
 typedef struct client_t client_t;
 
-#include <uv.h> // uv_*
-
 #ifdef RAGEL_HTTP_PARSER
 #   include "ragel-http-parser/http_parser.h"
 #else
 #   include "nodejs-http-parser/http_parser.h"
 #endif // RAGEL_HTTP_PARSER
 
-#include "client.h"
+#include "client.h" // client_t
+#include <uv.h> // uv_*
 
 void parser_init(client_t *client);
 void parser_init_or_client_close(client_t *client);

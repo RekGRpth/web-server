@@ -1,9 +1,8 @@
-#include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
+#include "macros.h" // DEBUG, ERROR, FATAL
+#include "server.h" // server_on_start
 #include <netinet/in.h>  // sockaddr_in
+#include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
 #include <uv.h> // uv_*
-#include "main.h"
-#include "macros.h" // DEBUG, ERROR
-#include "server.h"
 
 int main(int argc, char **argv) {
     for (int i = 0; i < argc; i++) DEBUG("argv[%i]=%s\n", i, argv[i]);

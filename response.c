@@ -1,6 +1,6 @@
+#include "response.h" // response_*
+#include "macros.h" // DEBUG, ERROR, FATAL
 #include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
-#include "response.h"
-#include "macros.h" // DEBUG, ERROR
 
 #define CRLF "\r\n"
 

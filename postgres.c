@@ -1,6 +1,6 @@
+#include "postgres.h" // postgres_*
+#include "macros.h" // DEBUG, ERROR, FATAL
 #include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
-#include "postgres.h"
-#include "macros.h" // DEBUG, ERROR
 
 static int postgres_connect(uv_loop_t *loop, postgres_t *postgres);
 static void postgres_on_poll(uv_poll_t *handle, int status, int events); // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)

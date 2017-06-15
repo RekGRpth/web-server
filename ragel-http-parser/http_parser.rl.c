@@ -154,6 +154,14 @@ static const char *method_strings[] = {
 #undef XX
 };
 
+#ifndef ARRAY_SIZE
+#   define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+
+#ifndef ELEM_AT
+#   define ELEM_AT(a, i, v) ((unsigned int) (i) < ARRAY_SIZE(a) ? (a)[(i)] : (v))
+#endif
+
 const char *http_method_str(enum http_method m) {
     return ELEM_AT(method_strings, m, "<unknown>");
 }

@@ -1,13 +1,12 @@
 #ifndef _POSTGRES_H
 #define _POSTGRES_H
 
-#include <postgresql/libpq-fe.h> // PQ*, PG*
-#include <uv.h> // uv_*
-
 typedef struct request_t request_t;
 
-#include "server.h"
-#include "request.h"
+#include "server.h" // server_t
+#include "request.h" // request_t
+#include <postgresql/libpq-fe.h> // PQ*, PG*
+#include <uv.h> // uv_*
 
 #define BYTEAOID 17
 #define INT8OID 20

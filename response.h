@@ -1,9 +1,9 @@
 #ifndef _RESPONSE_H
 #define _RESPONSE_H
 
-#include <uv.h> // uv_*
+#include "client.h" // client_t
 #include "xbuffer.h" // xbuf_*
-#include "client.h"
+#include <uv.h> // uv_*
 
 typedef struct response_t {
     uv_write_t req;

@@ -1,8 +1,8 @@
-#include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
+#include "server.h" // server_*
+#include "postgres.h" // postgres_t, postgres_init_and_connect, postgres_free
+#include "macros.h" // DEBUG, ERROR, FATAL
 #include <sys/sysctl.h> // sysctl, CTL_NET, NET_CORE, NET_CORE_SOMAXCONN
-#include "server.h"
-#include "macros.h" // DEBUG, ERROR
-#include "postgres.h"
+#include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
 
 static server_t *server_init(uv_loop_t *loop);
 static void server_free(server_t *server);

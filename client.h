@@ -1,9 +1,9 @@
 #ifndef _CLIENT_H
 #define _CLIENT_H
 
-#include <uv.h> // uv_*
+#include "parser.h" // http_parser, http_status
 #include "queue.h" // queue_*
-#include "parser.h"
+#include <uv.h> // uv_*
 
 enum {
   UV_CLOSING              = 0x01,   /* uv_close() called but not finished. */

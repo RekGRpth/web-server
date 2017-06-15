@@ -1,5 +1,5 @@
-#include "queue.h"
-#include "macros.h"
+#include "queue.h" // queue_t, queue_empty, queue_next
+#include "macros.h" // DEBUG, ERROR, FATAL
 
 int queue_count(queue_t *queue) {
 //    DEBUG("queue=%p\n", queue);

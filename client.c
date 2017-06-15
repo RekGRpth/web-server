@@ -1,8 +1,8 @@
+#include "client.h" // client_*
+#include "request.h" // request_t, request_free
+#include "response.h" // response_write
+#include "macros.h" // DEBUG, ERROR, FATAL
 #include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
-#include "client.h"
-#include "macros.h" // DEBUG, ERROR
-#include "request.h"
-#include "response.h"
 
 static client_t *client_init(uv_stream_t *stream);
 static void client_on_close(uv_handle_t *handle); // void (*uv_close_cb)(uv_handle_t* handle)

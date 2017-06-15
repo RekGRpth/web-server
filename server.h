@@ -1,8 +1,8 @@
 #ifndef _SERVER_H
 #define _SERVER_H
 
-#include <uv.h> // uv_*
 #include "queue.h" // queue_*
+#include <uv.h> // uv_*
 
 typedef struct server_t {
     queue_t postgres_queue;

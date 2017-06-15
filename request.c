@@ -1,7 +1,7 @@
-#include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
-#include "request.h"
-#include "macros.h" // DEBUG, ERROR
+#include "request.h" // request_*
 #include "xbuffer.h" // xbuf_*
+#include "macros.h" // DEBUG, ERROR, FATAL
+#include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
 
 request_t *request_init(client_t *client) {
 //    DEBUG("client=%p\n", client);
