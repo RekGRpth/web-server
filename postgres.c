@@ -1,4 +1,5 @@
 #include "postgres.h" // postgres_*
+#include "response.h" // response_write
 #include "macros.h" // DEBUG, ERROR, FATAL
 #include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
 
@@ -153,7 +154,7 @@ static int postgres_response(request_t *request, enum http_status code, char *bo
     if ((error = !request)) { FATAL("no_request\n"); return error; }
     client_t *client = request->client;
     request_free(request);
-    if ((error = client_response(client, code, body, length))) { FATAL("client_response\n"); return error; }
+    if ((error = response_write(client, code, body, length))) { FATAL("response_write\n"); return error; }
 //    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
     return error;
 }

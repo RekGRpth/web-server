@@ -103,16 +103,7 @@ static void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *b
 static int client_error(client_t *client, enum http_status code, char *body, int length) {
     int error = 0;
     if ((error = uv_read_stop((uv_stream_t *)&client->tcp))) { FATAL("uv_read_stop\n"); return error; } // int uv_read_stop(uv_stream_t*) // ???
-    if ((error = client_response(client, code, body, length))) { FATAL("client_response\n"); return error; }
+    if ((error = response_write(client, code, body, length))) { FATAL("response_write\n"); return error; }
     client_close(client); // ???
-    return error;
-}
-
-int client_response(client_t *client, enum http_status code, char *body, int length) {
-    int error = 0;
-//    if ((error = client->tcp.type != UV_TCP)) { FATAL("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }
-//    if ((error = client->tcp.flags > MAX_FLAG)) { FATAL("client=%p, client->tcp.flags=%u\n", client, client->tcp.flags); return error; }
-//    if ((error = uv_is_closing((const uv_handle_t *)&client->tcp))) { FATAL("uv_is_closing\n"); return error; } // int uv_is_closing(const uv_handle_t* handle)
-    if ((error = response_write(client, code, body, length))) { FATAL("response_write\n"); client_close(client); return error; } // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
     return error;
 }

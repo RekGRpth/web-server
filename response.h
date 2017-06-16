@@ -13,5 +13,6 @@ struct response_s {
 };
 
 int response_write(client_t *client, enum http_status code, char *body, int length);
+int response_write2(client_t *client, char *info, int infolen, char *body, int bodylen);
 
 #endif // _RESPONSE_H
