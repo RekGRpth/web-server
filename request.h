@@ -13,11 +13,12 @@ struct request_s {
     postgres_t *postgres;
     pointer_t server_pointer;
     pointer_t client_pointer;
-    xbuf_t xbuf;
-    int argc;
-    int varc;
+    xbuf_t info;
+    xbuf_t body;
+//    int argc;
+//    int varc;
     int hdrc;
-    int bodc;
+//    int bodc;
 };
 
 request_t *request_init(client_t *client);

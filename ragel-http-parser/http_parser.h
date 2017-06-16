@@ -263,7 +263,6 @@ struct http_parser {
   /** PRIVATE **/
   unsigned int type : 2;         /* enum http_parser_type */
   unsigned int flags : 8;        /* F_* values from 'flags' enum; semi-public */
-//  unsigned int state : 7;        /* enum state from http_parser.c */
   unsigned int state;        /* enum state from http_parser.c */
   unsigned int header_state : 7; /* enum header_state from http_parser.c */
   unsigned int index : 7;        /* index into current matcher */
@@ -290,16 +289,10 @@ struct http_parser {
   void *data; /* A pointer to get hook to the "connection" or "socket" object */
 
     ///////////////////////////////// RAGEL /////////////////////////////////
-    int method_state;
     int url_state;
-    int arg_state;
-    int var_field_state;
-    int var_value_state;
     int header_field_state;
     int header_value_state;
     int body_state;
-    int body_field_state;
-    int body_value_state;
     unsigned short headers_complete : 1;
     uint64_t ragel_content_length;
 };
@@ -319,36 +312,14 @@ struct http_parser_settings {
   http_cb      on_chunk_header;
   http_cb      on_chunk_complete;
     ///////////////////////////////// RAGEL /////////////////////////////////
-    http_cb      on_method_begin;
-    http_data_cb on_method;
-    http_cb      on_method_complete;
     http_cb      on_url_begin;
     http_cb      on_url_complete;
-    http_cb      on_args_begin;
-    http_cb      on_arg_begin;
-    http_data_cb on_arg;
-    http_cb      on_arg_complete;
-    http_cb      on_args_complete;
-    http_cb      on_vars_begin;
-    http_cb      on_var_field_begin;
-    http_data_cb on_var_field;
-    http_cb      on_var_field_complete;
-    http_cb      on_var_value_begin;
-    http_data_cb on_var_value;
-    http_cb      on_var_value_complete;
-    http_cb      on_vars_complete;
     http_cb      on_headers_begin;
     http_cb      on_header_field_begin;
     http_cb      on_header_field_complete;
     http_cb      on_header_value_begin;
     http_cb      on_header_value_complete;
     http_cb      on_body_begin;
-    http_cb      on_body_field_begin;
-    http_data_cb on_body_field;
-    http_cb      on_body_field_complete;
-    http_cb      on_body_value_begin;
-    http_data_cb on_body_value;
-    http_cb      on_body_value_complete;
     http_cb      on_body_complete;
 };
 

@@ -36,20 +36,15 @@
     token        = ascii - control - tspecials;
     text         = any - control;
     fragment     = token+;
-    arg          = token+ >{ BEGIN_DATA(arg); } ${ STATE_DATA(arg); } %{ COMPLETE_DATA(arg); };
-    args         = (arg ("/" arg)* "/"?) >{ BEGIN_NOTIFY(args); } %{ COMPLETE_NOTIFY(args); };
+    arg          = token+;
+    args         = arg ("/" arg)* "/"?;
     field        = token - "&";
-    var_field    = field+ >{ BEGIN_FIELD(var); } ${ STATE_FIELD(var); } %{ COMPLETE_FIELD(var); };
-    var_value    = field+ >{ BEGIN_VALUE(var); } ${ STATE_VALUE(var); } %{ COMPLETE_VALUE(var); };
-    var_null     = zlen >{ BEGIN_VALUE(var); } ${ STATE_VALUE(var); } %{ COMPLETE_VALUE(var); };
-    var          = var_field (("=" var_value) | ("="? var_null));
-    vars         = (var ("&" var)* "&"?) >{ BEGIN_NOTIFY(vars); } %{ COMPLETE_NOTIFY(vars); };
+    var          = field+ "="? field*;
+    vars         = var ("&" var)* "&"?;
     major        = "1" %{ parser->http_major = '1' - '0'; };
     minor        = "0" %{ parser->http_minor = '0' - '0'; } | "1" %{ parser->http_minor = '1' - '0'; };
     version      = "HTTP/" major "." minor;
-    method       = ("GET" %{ parser->method = HTTP_GET; }
-                   | "POST" %{ parser->method = HTTP_POST; }
-                   | (upper | digit | safe)+) >{ BEGIN_DATA(method); } ${ STATE_DATA(method); } %{ COMPLETE_DATA(method); };
+    method       = "GET" %{ parser->method = HTTP_GET; } | "POST" %{ parser->method = HTTP_POST; } | (upper | digit | safe)+;
     path         = "/"? args?;
     url          = (path ("?" vars?)? ("#" fragment?)?) >{ BEGIN_DATA(url); } ${ STATE_DATA(url); } %{ COMPLETE_DATA(url); };
     length       = digit >{ mark = p; } %{ if (parser->content_length > 0) { parser->content_length *= 10; } parser->content_length += (*mark - '0'); };
@@ -60,14 +55,8 @@
                    | header_field ": " header_value) crlf;
     request      = method " " url " " version;
     headers      = header* >{ BEGIN_NOTIFY(headers); } %{ COMPLETE_NOTIFY(headers); parser->headers_complete = 1; };
-    body_field   = field+ >{ BEGIN_FIELD(body); } ${ STATE_FIELD(body); } %{ COMPLETE_FIELD(body); };
-    body_value   = field+ >{ BEGIN_VALUE(body); } ${ STATE_VALUE(body); } %{ COMPLETE_VALUE(body); };
-    body_null    = zlen >{ BEGIN_VALUE(body); } ${ STATE_VALUE(body); } %{ COMPLETE_VALUE(body); };
-    body1        = body_field (("=" body_value) | ("="? body_null));
-    body2        = body1 ("&" body1)* "&"?;
-    body4        = any+ - body2;
-    body         = (body2 | body4) >{ BEGIN_DATA(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_DATA(body); };
-    message      = request crlf headers crlf (zlen | body);
+    body         = any* >{ BEGIN_DATA(body); } ${ STATE_DATA(body); parser->ragel_content_length++; } %{ COMPLETE_DATA(body); };
+    message      = request crlf headers crlf body;
     main        := message >{ BEGIN_NOTIFY(message); } %{ if (parser->ragel_content_length < parser->content_length) { fbreak; } else { COMPLETE_NOTIFY(message); } };
     write data;
 }%%
@@ -88,27 +77,15 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     const char *pe = data + len;
     const char *eof = pe;
     const char *mark = NULL;
-    INIT_DATA(method);
     INIT_DATA(url);
-    INIT_DATA(arg);
-    INIT_FIELD(var);
-    INIT_VALUE(var);
     INIT_FIELD(header);
     INIT_VALUE(header);
     INIT_DATA(body);
-    INIT_FIELD(body);
-    INIT_VALUE(body);
     %% write exec;
-    CONTINUE_DATA(method);
     CONTINUE_DATA(url);
-    CONTINUE_DATA(arg);
-    CONTINUE_FIELD(var);
-    CONTINUE_VALUE(var);
     if (!parser->headers_complete) CONTINUE_FIELD(header);
     if (!parser->headers_complete) CONTINUE_VALUE(header);
     CONTINUE_DATA(body);
-    CONTINUE_FIELD(body);
-    CONTINUE_VALUE(body);
     parser->state = cs;
     return p - data;
 }

@@ -2,6 +2,13 @@
 #include "macros.h" // DEBUG, ERROR, FATAL
 #include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
 
+#define BYTEAOID 17
+#define INT8OID 20
+#define INT2OID 21
+#define INT4OID 23
+#define TEXTOID 25
+#define JSONOID 114
+
 static int postgres_connect(uv_loop_t *loop, postgres_t *postgres);
 static void postgres_on_poll(uv_poll_t *handle, int status, int events); // void (*uv_poll_cb)(uv_poll_t* handle, int status, int events)
 static void postgres_listen(postgres_t *postgres);
@@ -199,14 +206,15 @@ int postgres_process(server_t *server) {
     if ((error = postgres_pop(postgres))) { FATAL("postgres_pop\n"); /*request_free(request); */return error; }
 //    if ((error = response_write(request, "hi", sizeof("hi") - 1))) { FATAL("response_write\n"); request_close(request->client); } return error; // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
 //    DEBUG("request=%p, request->client=%p\n", request, request->client);
-    DEBUG("xbuf(%li)=%.*s\n", request->xbuf.len, (int)request->xbuf.len, request->xbuf.base);
+    DEBUG("info(%li)=%.*s\n", request->info.len, (int)request->info.len, request->info.base);
+    DEBUG("body(%li)=%.*s\n", request->body.len, (int)request->body.len, request->body.base);
 //    if ((error = !PQsendQuery(postgres->conn, "select to_json(now());"))) { FATAL("PQsendQuery:%s", PQerrorMessage(postgres->conn)); /*request_free(request); */return error; } // int PQsendQuery(PGconn *conn, const char *command); char *PQerrorMessage(const PGconn *conn)
-    const char *command = "SELECT \"web\".\"route\"($1);";
-    const Oid paramTypes[] = {JSONOID};
+    const char *command = "SELECT \"web\".\"route\"($1, $2);";
+    const Oid paramTypes[] = {JSONOID, BYTEAOID};
     int nParams = sizeof(paramTypes) / sizeof(paramTypes[0]);
-    const char *const paramValues[] = {request->xbuf.base};
-    const int paramLengths[] = {request->xbuf.len};
-    const int paramFormats[] = {0};
+    const char *const paramValues[] = {request->info.base, request->body.base};
+    const int paramLengths[] = {request->info.len, request->body.len};
+    const int paramFormats[] = {0, 1};
     if ((error = !PQsendQueryParams(postgres->conn, command, nParams, paramTypes, paramValues, paramLengths, paramFormats, 0))) { FATAL("PQsendQueryParams:%s\n", PQerrorMessage(postgres->conn)); return error; } // int PQsendQueryParams(PGconn *conn, const char *command, int nParams, const Oid *paramTypes, const char * const *paramValues, const int *paramLengths, const int *paramFormats, int resultFormat); char *PQerrorMessage(const PGconn *conn)
     if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { FATAL("uv_poll_start\n"); /*request_free(request); */return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
     return error;

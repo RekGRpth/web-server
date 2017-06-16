@@ -8,13 +8,6 @@ typedef struct postgres_s postgres_t;
 #include <postgresql/libpq-fe.h> // PQ*, PG*
 #include <uv.h> // uv_*
 
-#define BYTEAOID 17
-#define INT8OID 20
-#define INT2OID 21
-#define INT4OID 23
-#define TEXTOID 25
-#define JSONOID 114
-
 struct postgres_s {
     uv_poll_t poll;
     char *conninfo;

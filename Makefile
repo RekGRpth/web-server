@@ -10,19 +10,19 @@ endif
 ifeq (false,$(RAGEL))
     CFLAGS+=-DNODEJS_HTTP_PARSER
     ifeq (true,$(DEBUG))
-        server: main.o xbuffer.o server.o queue.o postgres.o client.o request.o parser.o response.o nodejs-http-parser/http_parser_g.o
+        server: main.o queue.o xbuffer.o server.o client.o request.o nodejs-http-parser/http_parser_g.o parser.o postgres.o response.o
 			$(CC) $(CFLAGS) $+ -luv -lpq -o $@
         nodejs-http-parser/http_parser_g.o: Makefile
 			$(MAKE) -C nodejs-http-parser http_parser_g.o
     else
-        server: main.o xbuffer.o server.o queue.o postgres.o client.o request.o parser.o response.o nodejs-http-parser/http_parser.o
+        server: main.o queue.o xbuffer.o server.o client.o request.o nodejs-http-parser/http_parser_g.o parser.o postgres.o response.o
 			$(CC) $(CFLAGS) $+ -luv -lpq -o $@
         nodejs-http-parser/http_parser.o: Makefile
 			$(MAKE) -C nodejs-http-parser http_parser.o
     endif
 else
     CFLAGS+=-DRAGEL_HTTP_PARSER
-    server: main.o xbuffer.o server.o queue.o postgres.o client.o request.o parser.o response.o ragel-http-parser/http_parser.o
+    server: main.o queue.o xbuffer.o server.o client.o request.o ragel-http-parser/http_parser.o parser.o postgres.o response.o
 		$(CC) $(CFLAGS) $+ -luv -lpq -o $@
     ragel-http-parser/http_parser.o: Makefile
 		$(MAKE) -C ragel-http-parser http_parser.o
