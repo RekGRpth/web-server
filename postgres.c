@@ -19,6 +19,7 @@ static void postgres_error_result(postgres_t *postgres, PGresult *result);
 static void postgres_error_code_message_length(postgres_t *postgres, enum http_status code, char *message, int length);
 static void postgres_success(postgres_t *postgres, PGresult *result);
 static int postgres_response(request_t *request, enum http_status code, char *body, int length);
+static int postgres_response2(request_t *request, char *info, int infolen, char *body, int bodylen);
 static int postgres_push(postgres_t *postgres);
 static int postgres_pop(postgres_t *postgres);
 static int postgres_connection_error(char *sqlstate);
@@ -136,7 +137,7 @@ static void postgres_error_result(postgres_t *postgres, PGresult *result) {
 }
 
 static void postgres_error_code_message_length(postgres_t *postgres, enum http_status code, char *message, int length) {
-    ERROR("%s", message);
+    ERROR("%s\n", message);
 //    if (postgres_socket(postgres)) { FATAL("postgres_socket\n"); return; }
     request_t *request = postgres->request;
     if (postgres_response(request, code, message, length)) FATAL("postgres_response\n");
@@ -145,8 +146,16 @@ static void postgres_error_code_message_length(postgres_t *postgres, enum http_s
 static void postgres_success(postgres_t *postgres, PGresult *result) {
 //    DEBUG("result=%p, postgres=%p\n", result, postgres);
     request_t *request = postgres->request;
-    if (PQntuples(result) == 0 || PQnfields(result) == 0 || PQgetisnull(result, 0, 0)) { ERROR("no_data_found\n"); if (request) postgres_error_code_message_length(postgres, HTTP_STATUS_NO_RESPONSE, "no data found", sizeof("no data found") - 1); return; } // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res); int PQgetisnull(const PGresult *res, int row_number, int column_number)
-    if (postgres_response(request, HTTP_STATUS_OK, PQgetvalue(result, 0, 0), PQgetlength(result, 0, 0))) FATAL("postgres_response\n");
+    char *error = NULL;
+    if (PQntuples(result) != 1 || PQnfields(result) != 2) error = "1 row and 2 cols expected"; // int PQntuples(const PGresult *res); int PQnfields(const PGresult *res);
+    int info = PQfnumber(result, "info");
+    if (info == -1) error = "info col expected";
+    if (PQftype(result, info) != TEXTOID) error = "info col must be text"; // Oid PQftype(const PGresult *res, int column_number);
+    int body = PQfnumber(result, "body");
+    if (body == -1) error = "body col expected";
+    if (PQftype(result, body) != BYTEAOID) error = "body col must be bytea"; // Oid PQftype(const PGresult *res, int column_number);
+    if (error) { if (request) postgres_error_code_message_length(postgres, HTTP_STATUS_NO_RESPONSE, error, strlen(error)); return; }
+    if (postgres_response2(request, PQgetvalue(result, 0, info), PQgetlength(result, 0, info), PQgetvalue(result, 0, body), PQgetlength(result, 0, body))) FATAL("postgres_response\n");
 }
 
 static int postgres_response(request_t *request, enum http_status code, char *body, int length) {
@@ -155,6 +164,16 @@ static int postgres_response(request_t *request, enum http_status code, char *bo
     client_t *client = request->client;
     request_free(request);
     if ((error = response_write(client, code, body, length))) { FATAL("response_write\n"); return error; }
+//    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
+    return error;
+}
+
+static int postgres_response2(request_t *request, char *info, int infolen, char *body, int bodylen) {
+    int error = 0;
+    if ((error = !request)) { FATAL("no_request\n"); return error; }
+    client_t *client = request->client;
+    request_free(request);
+    if ((error = response_write2(client, info, infolen, body, bodylen))) { FATAL("response_write2\n"); return error; }
 //    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
     return error;
 }
@@ -215,8 +234,8 @@ int postgres_process(server_t *server) {
     int nParams = sizeof(paramTypes) / sizeof(paramTypes[0]);
     const char *const paramValues[] = {request->info.base, request->body.base};
     const int paramLengths[] = {request->info.len, request->body.len};
-    const int paramFormats[] = {0, 1};
-    if ((error = !PQsendQueryParams(postgres->conn, command, nParams, paramTypes, paramValues, paramLengths, paramFormats, 0))) { FATAL("PQsendQueryParams:%s\n", PQerrorMessage(postgres->conn)); return error; } // int PQsendQueryParams(PGconn *conn, const char *command, int nParams, const Oid *paramTypes, const char * const *paramValues, const int *paramLengths, const int *paramFormats, int resultFormat); char *PQerrorMessage(const PGconn *conn)
+    const int paramFormats[] = {1, 1};
+    if ((error = !PQsendQueryParams(postgres->conn, command, nParams, paramTypes, paramValues, paramLengths, paramFormats, 1))) { FATAL("PQsendQueryParams:%s\n", PQerrorMessage(postgres->conn)); return error; } // int PQsendQueryParams(PGconn *conn, const char *command, int nParams, const Oid *paramTypes, const char * const *paramValues, const int *paramLengths, const int *paramFormats, int resultFormat); char *PQerrorMessage(const PGconn *conn)
     if ((error = uv_poll_start(&postgres->poll, UV_WRITABLE, postgres_on_poll))) { FATAL("uv_poll_start\n"); /*request_free(request); */return error; } // int uv_poll_start(uv_poll_t* handle, int events, uv_poll_cb cb)
     return error;
 }

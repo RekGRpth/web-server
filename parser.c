@@ -77,7 +77,7 @@ static int parser_on_message_begin(http_parser *parser) { // typedef int (*http_
     if ((error = !parser->data)) { FATAL("request_init\n"); return error; }
     request_t *request = (request_t *)parser->data;
     if ((error = xbuf_cat(&request->info, "{") < 0)) { FATAL("xbuf_cat\n"); return error; }
-    if ((error = xbuf_xcat(&request->info, "\"Environment\":{\"Server\":\"%s:%i\",\"Client\":\"%s:%i\"}", client->server_ip, client->server_port, client->client_ip, client->client_port) < 0)) { FATAL("xbuf_xcat\n"); return error; }
+//    if ((error = xbuf_xcat(&request->info, "\"Environment\":{\"Server\":\"%s:%i\",\"Client\":\"%s:%i\"}", client->server_ip, client->server_port, client->client_ip, client->client_port) < 0)) { FATAL("xbuf_xcat\n"); return error; }
     return error;
 }
 
@@ -154,8 +154,9 @@ static int parser_on_url_begin(http_parser *parser) { // typedef int (*http_cb) 
 //    DEBUG("\n");
     int error = 0;
     request_t *request = (request_t *)parser->data;
-    if ((error = xbuf_xcat(&request->info, ",\"Method\":\"%s\"", http_method_str(parser->method)) < 0)) { FATAL("xbuf_xcat\n"); return error; }
-    if ((error = xbuf_cat(&request->info, ",\"Url\":\"") < 0)) { FATAL("xbuf_cat\n"); return error; }
+    if ((error = xbuf_xcat(&request->info, "\"Server\":\"%s:%i\",\"Client\":\"%s:%i\",\"Method\":\"%s\",\"Url\":\"", request->client->server_ip, request->client->server_port, request->client->client_ip, request->client->client_port, http_method_str(parser->method)) < 0)) { FATAL("xbuf_xcat\n"); return error; }
+//    if ((error = xbuf_xcat(&request->info, ",\"Method\":\"%s\"", http_method_str(parser->method)) < 0)) { FATAL("xbuf_xcat\n"); return error; }
+//    if ((error = xbuf_cat(&request->info, ",\"Url\":\"") < 0)) { FATAL("xbuf_cat\n"); return error; }
     return error;
 }
 
@@ -171,7 +172,8 @@ static int parser_on_headers_begin(http_parser *parser) { // typedef int (*http_
 //    DEBUG("\n");
     int error = 0;
     request_t *request = (request_t *)parser->data;
-    if ((error = xbuf_cat(&request->info, ",\"Headers\":{") < 0)) { FATAL("xbuf_cat\n"); return error; }
+    if ((error = xbuf_xcat(&request->info, ",\"Version\":\"HTTP/%i.%i\",\"Headers\":{", parser->http_major, parser->http_minor) < 0)) { FATAL("xbuf_xcat\n"); return error; }
+//    if ((error = xbuf_cat(&request->info, ",\"Headers\":{") < 0)) { FATAL("xbuf_cat\n"); return error; }
     return error;
 }
 
