@@ -47,7 +47,9 @@
     major        = "1" %{ parser->http_major = '1' - '0'; };
     minor        = "0" %{ parser->http_minor = '0' - '0'; } | "1" %{ parser->http_minor = '1' - '0'; };
     version      = "HTTP/" major "." minor;
-    method       = "GET" %{ parser->method = HTTP_GET; } | "POST" %{ parser->method = HTTP_POST; } | (upper | digit | safe)+;
+    method       = ("GET" %{ parser->method = HTTP_GET; }
+                   | "POST" %{ parser->method = HTTP_POST; }
+                   | (upper | digit | safe)+) >{ BEGIN_DATA(method); } ${ STATE_DATA(method); } %{ COMPLETE_DATA(method); };
     path         = "/"? args?;
     url          = (path ("?" vars?)? ("#" fragment?)?) >{ BEGIN_DATA(url); } ${ STATE_DATA(url); } %{ COMPLETE_DATA(url); };
     length       = digit >{ mark = p; } %{ if (parser->content_length > 0) { parser->content_length *= 10; } parser->content_length += (*mark - '0'); };
@@ -86,6 +88,7 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     const char *pe = data + len;
     const char *eof = pe;
     const char *mark = NULL;
+    INIT_DATA(method);
     INIT_DATA(url);
     INIT_DATA(arg);
     INIT_FIELD(var);
@@ -96,6 +99,7 @@ size_t http_parser_execute(http_parser *parser, const http_parser_settings *sett
     INIT_FIELD(body);
     INIT_VALUE(body);
     %% write exec;
+    CONTINUE_DATA(method);
     CONTINUE_DATA(url);
     CONTINUE_DATA(arg);
     CONTINUE_FIELD(var);
