@@ -2,6 +2,7 @@
 #define _QUEUE_H_
 
 typedef struct queue_s queue_t;
+
 struct queue_s {
     queue_t *prev;
     queue_t *next;

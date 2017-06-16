@@ -1,8 +1,6 @@
 #ifndef _PARSER_H
 #define _PARSER_H
 
-typedef struct client_t client_t;
-
 #ifdef RAGEL_HTTP_PARSER
 #   include "ragel-http-parser/http_parser.h"
 #else

@@ -1,6 +1,8 @@
 #ifndef _CLIENT_H
 #define _CLIENT_H
 
+typedef struct client_s client_t;
+
 #include "parser.h" // http_parser, http_status
 #include "queue.h" // queue_*
 #include <uv.h> // uv_*
@@ -26,7 +28,7 @@ enum {
 
 #define MAX_FLAG (UV_CLOSING | UV_CLOSED | UV_STREAM_READING | UV_STREAM_SHUTTING | UV_STREAM_SHUT | UV_STREAM_READABLE | UV_STREAM_WRITABLE | UV_STREAM_BLOCKING | UV_STREAM_READ_PARTIAL | UV_STREAM_READ_EOF | UV_TCP_NODELAY | UV_TCP_KEEPALIVE | UV_TCP_SINGLE_ACCEPT | UV_HANDLE_IPV6 | UV_UDP_PROCESSING | UV_HANDLE_BOUND)
 
-typedef struct client_t {
+struct client_s {
     uv_tcp_t tcp;
     http_parser parser;
     pointer_t server_pointer;
@@ -35,7 +37,7 @@ typedef struct client_t {
     char client_ip[16];
     int server_port;
     int client_port;
-} client_t;
+};
 
 void client_on_connect(uv_stream_t *stream, int status); // void (*uv_connection_cb)(uv_stream_t* server, int status)
 void client_free(client_t *client);

@@ -1,13 +1,15 @@
 #ifndef _XBUFFER_H
 #define _XBUFFER_H
 
+typedef struct xbuf_s xbuf_t;
+
 #include <stdio.h> // FILE
 
-typedef struct {
+struct xbuf_s {
     char *base;
     size_t len;
     FILE *stream;
-} xbuf_t;
+};
 
 xbuf_t *xbuf_init(xbuf_t *xbuf);
 void xbuf_free(xbuf_t *xbuf);

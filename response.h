@@ -1,14 +1,16 @@
 #ifndef _RESPONSE_H
 #define _RESPONSE_H
 
+typedef struct response_s response_t;
+
 #include "client.h" // client_t
 #include "xbuffer.h" // xbuf_*
 #include <uv.h> // uv_*
 
-typedef struct response_t {
+struct response_s {
     uv_write_t req;
     xbuf_t xbuf;
-} response_t;
+};
 
 int response_write(client_t *client, enum http_status code, char *body, int length);
 
