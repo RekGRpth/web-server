@@ -209,7 +209,7 @@ int postgres_process(server_t *server) {
     DEBUG("info(%li)=%.*s\n", request->info.len, (int)request->info.len, request->info.base);
     DEBUG("body(%li)=%.*s\n", request->body.len, (int)request->body.len, request->body.base);
 //    if ((error = !PQsendQuery(postgres->conn, "select to_json(now());"))) { FATAL("PQsendQuery:%s", PQerrorMessage(postgres->conn)); /*request_free(request); */return error; } // int PQsendQuery(PGconn *conn, const char *command); char *PQerrorMessage(const PGconn *conn)
-    const char *command = "SELECT \"http\".\"route\"(($1, $2)::http.request);";
+    const char *command = "SELECT response.info, response.body from http.route(($1, $2)::http.request) as response;";
     const Oid paramTypes[] = {JSONOID, BYTEAOID};
     int nParams = sizeof(paramTypes) / sizeof(paramTypes[0]);
     const char *const paramValues[] = {request->info.base, request->body.base};
