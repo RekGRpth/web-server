@@ -1,7 +1,8 @@
 #include "parser.h" // parser_*
 #include "request.h" // request_t, request_push, request_init
 #include "macros.h" // DEBUG, ERROR, FATAL
-//#include "c_lambda.h"
+
+#define _(t, b) ({ t _ b _; })
 
 static int parser_should_keep_alive(client_t *client);
 static int parser_on_message_begin(http_parser *parser); // typedef int (*http_cb) (http_parser*)
@@ -50,7 +51,7 @@ static int parser_on_body_complete(http_parser *parser); // typedef int (*http_c
 static const http_parser_settings parser_settings = {
     .on_message_begin = parser_on_message_begin, // http_cb
 //    .on_url = parser_on_url, // http_data_cb
-//    .on_url = func(int, on_url, (http_parser *parser, const char *at, size_t length) { return 0; }),
+//    .on_url = _(int, (http_parser *parser, const char *at, size_t length) { return 0; }),
     .on_header_field = parser_on_header_field, // http_data_cb
     .on_header_value = parser_on_header_value, // http_data_cb
     .on_headers_complete = parser_on_headers_complete, // http_cb
@@ -92,6 +93,10 @@ static const http_parser_settings parser_settings = {
     .on_body_complete = parser_on_body_complete, // http_cb
 #endif // RAGEL_HTTP_PARSER
 };
+
+/*static void parser_settings_init() {
+    parser_settings.on_url = _(int, (http_parser *parser, const char *at, size_t length) { return 0; });
+}*/
 
 void parser_init(client_t *client) {
 //    DEBUG("client=%p\n", client);
