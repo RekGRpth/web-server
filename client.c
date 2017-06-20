@@ -1,6 +1,6 @@
 #include "client.h" // client_*
 #include "request.h" // request_t, request_free
-#include "response.h" // response_write
+#include "response.h" // response_code_body
 #include "macros.h" // DEBUG, ERROR, FATAL
 #include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
 
@@ -103,7 +103,7 @@ static void client_on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *b
 static int client_error(client_t *client, enum http_status code, char *body, int length) {
     int error = 0;
     if ((error = uv_read_stop((uv_stream_t *)&client->tcp))) { FATAL("uv_read_stop\n"); return error; } // int uv_read_stop(uv_stream_t*) // ???
-    if ((error = response_write(client, code, body, length))) { FATAL("response_write\n"); return error; }
+    if ((error = response_code_body(client, code, body, length))) { FATAL("response_code_body\n"); return error; }
     client_close(client); // ???
     return error;
 }

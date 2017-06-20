@@ -12,7 +12,7 @@ struct response_s {
     xbuf_t xbuf;
 };
 
-int response_write(client_t *client, enum http_status code, char *body, int length);
-int response_write2(client_t *client, char *info, int infolen, char *body, int bodylen);
+int response_code_body(client_t *client, enum http_status code, char *body, int bodylen);
+int response_info_body(client_t *client, char *info, int infolen, char *body, int bodylen);
 
 #endif // _RESPONSE_H

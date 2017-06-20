@@ -1,5 +1,5 @@
 #include "postgres.h" // postgres_*
-#include "response.h" // response_write
+#include "response.h" // response_code_body
 #include "macros.h" // DEBUG, ERROR, FATAL
 #include <stdlib.h> // malloc, realloc, calloc, free, getenv, setenv, atoi, size_t
 
@@ -163,7 +163,7 @@ static int postgres_response(request_t *request, enum http_status code, char *bo
     if ((error = !request)) { FATAL("no_request\n"); return error; }
     client_t *client = request->client;
     request_free(request);
-    if ((error = response_write(client, code, body, length))) { FATAL("response_write\n"); return error; }
+    if ((error = response_code_body(client, code, body, length))) { FATAL("response_code_body\n"); return error; }
 //    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
     return error;
 }
@@ -173,7 +173,7 @@ static int postgres_response2(request_t *request, char *info, int infolen, char 
     if ((error = !request)) { FATAL("no_request\n"); return error; }
     client_t *client = request->client;
     request_free(request);
-    if ((error = response_write2(client, info, infolen, body, bodylen))) { FATAL("response_write2\n"); return error; }
+    if ((error = response_info_body(client, info, infolen, body, bodylen))) { FATAL("response_info_body\n"); return error; }
 //    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
     return error;
 }
@@ -224,7 +224,7 @@ int postgres_process(server_t *server) {
     postgres->request = request;
     request->postgres = postgres;
     if ((error = postgres_pop(postgres))) { FATAL("postgres_pop\n"); /*request_free(request); */return error; }
-//    if ((error = response_write(request, "hi", sizeof("hi") - 1))) { FATAL("response_write\n"); request_close(request->client); } return error; // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
+//    if ((error = response_code_body(request, "hi", sizeof("hi") - 1))) { FATAL("response_code_body\n"); request_close(request->client); } return error; // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
 //    DEBUG("request=%p, request->client=%p\n", request, request->client);
 //    DEBUG("info(%li)=%.*s\n", request->info.len, (int)request->info.len, request->info.base);
 //    DEBUG("body(%li)=%.*s\n", request->body.len, (int)request->body.len, request->body.base);
