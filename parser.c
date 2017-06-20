@@ -235,3 +235,12 @@ const char *http_status_str(enum http_status s) {
         default: return "<unknown>";
     }
 }
+
+int http_status_len(enum http_status s) {
+    switch (s) {
+#define XX(num, name, string) case HTTP_STATUS_##name: return sizeof(#num " " #string) - 1;
+    HTTP_STATUS_MAP(XX)
+#undef XX
+        default: return sizeof("<unknown>") - 1;
+    }
+}

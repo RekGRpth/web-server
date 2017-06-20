@@ -16,7 +16,7 @@ int response_code_body(client_t *client, enum http_status code, char *body, int 
     int infolen = sizeof(INFO) - 6;
     for (int number = bodylen; number /= 10; infolen++);
     const char *status_str = http_status_str(code);
-    infolen += strlen(status_str);
+    infolen += http_status_len(code);
     char info[infolen + 1];
     if ((error = snprintf(info, infolen + 1, INFO, client->parser.http_major, client->parser.http_minor, status_str, bodylen) - infolen)) { FATAL("snprintf\n"); return error; }
     return response_info_body(client, info, infolen, body, bodylen);

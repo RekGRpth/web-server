@@ -14,5 +14,6 @@ void parser_init(client_t *client);
 void parser_init_or_client_close(client_t *client);
 size_t parser_execute(client_t *client, const char *data, size_t len);
 const char *http_status_str(enum http_status s);
+int http_status_len(enum http_status s);
 
 #endif // _PARSER_H
