@@ -35,8 +35,8 @@ int response_write(client_t *client, enum http_status code, char *body, int leng
 }
 
 int response_write2(client_t *client, char *info, int infolen, char *body, int bodylen) {
-    DEBUG("client=%p, info(%i)=%.*s\n", client, infolen, infolen, info);
-    DEBUG("client=%p, body(%i)=%.*s\n", client, bodylen, bodylen, body);
+//    DEBUG("client=%p, info(%i)=%.*s\n", client, infolen, infolen, info);
+//    DEBUG("client=%p, body(%i)=%.*s\n", client, bodylen, bodylen, body);
     int error = 0;
 //    if (code != HTTP_STATUS_OK) ERROR("code=%s\n", http_status_str(code));
 //    if ((error = client->tcp.type != UV_TCP)) { FATAL("client=%p, client->tcp.type=%i\n", client, client->tcp.type); return error; }

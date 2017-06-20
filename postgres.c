@@ -226,8 +226,8 @@ int postgres_process(server_t *server) {
     if ((error = postgres_pop(postgres))) { FATAL("postgres_pop\n"); /*request_free(request); */return error; }
 //    if ((error = response_write(request, "hi", sizeof("hi") - 1))) { FATAL("response_write\n"); request_close(request->client); } return error; // char *PQgetvalue(const PGresult *res, int row_number, int column_number); int PQgetlength(const PGresult *res, int row_number, int column_number)
 //    DEBUG("request=%p, request->client=%p\n", request, request->client);
-    DEBUG("info(%li)=%.*s\n", request->info.len, (int)request->info.len, request->info.base);
-    DEBUG("body(%li)=%.*s\n", request->body.len, (int)request->body.len, request->body.base);
+//    DEBUG("info(%li)=%.*s\n", request->info.len, (int)request->info.len, request->info.base);
+//    DEBUG("body(%li)=%.*s\n", request->body.len, (int)request->body.len, request->body.base);
 //    if ((error = !PQsendQuery(postgres->conn, "select to_json(now());"))) { FATAL("PQsendQuery:%s", PQerrorMessage(postgres->conn)); /*request_free(request); */return error; } // int PQsendQuery(PGconn *conn, const char *command); char *PQerrorMessage(const PGconn *conn)
     const char *command = "SELECT response.info, response.body from http.route(($1, $2)::http.request) as response;";
     const Oid paramTypes[] = {JSONOID, BYTEAOID};
