@@ -18,8 +18,8 @@ static int postgres_reset(postgres_t *postgres);
 static void postgres_error_result(postgres_t *postgres, PGresult *result);
 static void postgres_error_code_message_length(postgres_t *postgres, enum http_status code, char *message, int length);
 static void postgres_success(postgres_t *postgres, PGresult *result);
-static int postgres_response(request_t *request, enum http_status code, char *body, int length);
-static int postgres_response2(request_t *request, char *info, int infolen, char *body, int bodylen);
+static int postgres_code_body(request_t *request, enum http_status code, char *body, int bodylen);
+static int postgres_info_body(request_t *request, char *info, int infolen, char *body, int bodylen);
 static int postgres_push(postgres_t *postgres);
 static int postgres_pop(postgres_t *postgres);
 static int postgres_connection_error(char *sqlstate);
@@ -133,14 +133,14 @@ static void postgres_error_result(postgres_t *postgres, PGresult *result) {
     if (postgres_connection_error(sqlstate)) return;
     request_t *request = postgres->request;
 //    DEBUG("sqlstate=%s\n", sqlstate);
-    if (postgres_response(request, postgres_sqlstate_to_code(sqlstate), message, strlen(message))) FATAL("postgres_response\n");
+    if (postgres_code_body(request, postgres_sqlstate_to_code(sqlstate), message, strlen(message))) FATAL("postgres_code_body\n");
 }
 
 static void postgres_error_code_message_length(postgres_t *postgres, enum http_status code, char *message, int length) {
     ERROR("%s\n", message);
 //    if (postgres_socket(postgres)) { FATAL("postgres_socket\n"); return; }
     request_t *request = postgres->request;
-    if (postgres_response(request, code, message, length)) FATAL("postgres_response\n");
+    if (postgres_code_body(request, code, message, length)) FATAL("postgres_code_body\n");
 }
 
 static void postgres_success(postgres_t *postgres, PGresult *result) {
@@ -155,20 +155,20 @@ static void postgres_success(postgres_t *postgres, PGresult *result) {
     if (body == -1) error = "body col expected";
     if (PQftype(result, body) != BYTEAOID) error = "body col must be bytea"; // Oid PQftype(const PGresult *res, int column_number);
     if (error) { if (request) postgres_error_code_message_length(postgres, HTTP_STATUS_NO_RESPONSE, error, strlen(error)); return; }
-    if (postgres_response2(request, PQgetvalue(result, 0, info), PQgetlength(result, 0, info), PQgetvalue(result, 0, body), PQgetlength(result, 0, body))) FATAL("postgres_response\n");
+    if (postgres_info_body(request, PQgetvalue(result, 0, info), PQgetlength(result, 0, info), PQgetvalue(result, 0, body), PQgetlength(result, 0, body))) FATAL("postgres_info_body\n");
 }
 
-static int postgres_response(request_t *request, enum http_status code, char *body, int length) {
+static int postgres_code_body(request_t *request, enum http_status code, char *body, int bodylen) {
     int error = 0;
     if ((error = !request)) { FATAL("no_request\n"); return error; }
     client_t *client = request->client;
     request_free(request);
-    if ((error = response_code_body(client, code, body, length))) { FATAL("response_code_body\n"); return error; }
+    if ((error = response_code_body(client, code, body, bodylen))) { FATAL("response_code_body\n"); return error; }
 //    DEBUG("result=%p, postgres=%p, request=%p, client=%p\n", result, postgres, request, client);
     return error;
 }
 
-static int postgres_response2(request_t *request, char *info, int infolen, char *body, int bodylen) {
+static int postgres_info_body(request_t *request, char *info, int infolen, char *body, int bodylen) {
     int error = 0;
     if ((error = !request)) { FATAL("no_request\n"); return error; }
     client_t *client = request->client;
